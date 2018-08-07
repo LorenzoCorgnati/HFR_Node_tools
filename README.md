@@ -35,7 +35,7 @@ The required toolboxes are:
 - M_Map (http://www2.ocgy.ubc.ca/~rich/private/mapug.html#p1); 
 - GSHHS (http://www.ngdc.noaa.gov/mgg/shorelines/data/gshhs/); 
 - Nctoolbox-1.1.3 (https://github.com/nctoolbox/nctoolbox); 
-- mysql-connector-java-5.1.17 driver for connection to MySQL database (https://mvnrepository.com/artifact/mysql/mysql-connector-java/5.1.17); 
+- mysql-connector-java-5.1.17 driver (https://mvnrepository.com/artifact/mysql/mysql-connector-java/5.1.17); 
 - Rdir (http://www.mathworks.com/matlabcentral/fileexchange/19550-recursive-directory-listing).
 
 
