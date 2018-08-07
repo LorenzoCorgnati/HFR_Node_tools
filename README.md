@@ -39,7 +39,8 @@ The required toolboxes are:
 - Rdir (http://www.mathworks.com/matlabcentral/fileexchange/19550-recursive-directory-listing).
 
 
-Author: Lorenzo Corgnati Date: August 7, 2018
+Author: Lorenzo Corgnati
+Date: August 7, 2018
 
 E-mail: lorenzo.corgnati@sp.ismar.cnr.it
 
