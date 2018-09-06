@@ -541,7 +541,7 @@ while(kk>0)
                 end
             end
             
-            clear Grid gridLon gridLat lonG latG lon lat;
+            clear Grid gridLon gridLat lonG latG lon lat ruvFiles;
             
         end
         

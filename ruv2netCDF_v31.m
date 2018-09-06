@@ -661,7 +661,7 @@ if (R2C_err == 0)
         
         %         dimid_t = netcdf.defDim(ncid, 'TIME', netcdf.getConstant('unlimited'));
         dimid_t = netcdf.defDim(ncid, 'TIME', 1);
-        dimid_bearing = netcdf.defDim(ncid, 'HEAD', numel( bearing_dim));
+        dimid_bearing = netcdf.defDim(ncid, 'BEAR', numel( bearing_dim));
         dimid_range = netcdf.defDim(ncid, 'RNGE', numel( range_dim));
         dimid_depth = netcdf.defDim(ncid, 'DEPH', 1);
         dimid_maxsite = netcdf.defDim(ncid, 'MAXSITE', maxsite);
@@ -710,12 +710,12 @@ if (R2C_err == 0)
         netcdf.putAtt(ncid, varid_t, 'ancillary_variables', 'TIME_SEADATANET_QC');
         
         % Bearing (arbitrary 'y' dimension)
-        varid_bearing = netcdf.defVar(ncid, 'HEAD', 'float', dimid_bearing);
+        varid_bearing = netcdf.defVar(ncid, 'BEAR', 'float', dimid_bearing);
         netcdf.putAtt(ncid, varid_bearing, 'axis', 'Y');
         netcdf.putAtt(ncid, varid_bearing, 'long_name', 'Bearing Away From Instrument');
         netcdf.putAtt(ncid, varid_bearing, 'units', 'degrees_true');
-        netcdf.putAtt(ncid, varid_bearing, 'sdn_parameter_name', 'Orientation (horizontal relative to true north) of measurement device {heading}');
-        netcdf.putAtt(ncid, varid_bearing, 'sdn_parameter_urn', 'SDN:P01::HEADCM01');
+        netcdf.putAtt(ncid, varid_bearing, 'sdn_parameter_name', 'Bearing');
+        netcdf.putAtt(ncid, varid_bearing, 'sdn_parameter_urn', 'SDN:P01::BEARRFTR');
         netcdf.putAtt(ncid, varid_bearing, 'sdn_uom_name', 'Degrees true');
         netcdf.putAtt(ncid, varid_bearing, 'sdn_uom_urn', 'SDN:P06::UABB');
         netcdf.putAtt(ncid, varid_bearing, 'ancillary_variables', 'POSITION_SEADATANET_QC');
@@ -763,7 +763,7 @@ if (R2C_err == 0)
         netcdf.putAtt( ncid, varid_lat, 'long_name', 'Latitude' );
         netcdf.putAtt( ncid, varid_lat, 'units', 'degrees_north' );
         netcdf.putAtt(ncid, varid_lat, 'valid_range', single( [-90 90]));
-%         netcdf.putAtt( ncid, varid_lat, 'coordinates', 'HEAD RNGE' );
+%         netcdf.putAtt( ncid, varid_lat, 'coordinates', 'BEAR RNGE' );
         netcdf.putAtt(ncid, varid_lat, 'FillValue', netcdf.getConstant('NC_FILL_FLOAT'));
         %     netcdf.putAtt(ncid, varid_lat, 'axis', 'Y');
         netcdf.putAtt(ncid, varid_lat, 'sdn_parameter_name', 'Latitude north');
@@ -779,7 +779,7 @@ if (R2C_err == 0)
         netcdf.putAtt( ncid, varid_lon, 'long_name', 'Longitude' );
         netcdf.putAtt( ncid, varid_lon, 'units', 'degrees_east' );
         netcdf.putAtt(ncid, varid_lon, 'valid_range', single( [-180 180]));
-%         netcdf.putAtt( ncid, varid_lon, 'coordinates', 'HEAD RNGE' );
+%         netcdf.putAtt( ncid, varid_lon, 'coordinates', 'BEAR RNGE' );
         netcdf.putAtt(ncid, varid_lon, 'FillValue', netcdf.getConstant('NC_FILL_FLOAT'));
         netcdf.putAtt(ncid, varid_lon, 'sdn_parameter_name', 'Longitude east');
         netcdf.putAtt(ncid, varid_lon, 'sdn_parameter_urn', 'SDN:P01::ALONZZ01');
@@ -1030,7 +1030,7 @@ if (R2C_err == 0)
         netcdf.putAtt(ncid, varid_xdst, 'sdn_parameter_urn', '');
         netcdf.putAtt(ncid, varid_xdst, 'sdn_uom_name', 'Kilometres');
         netcdf.putAtt(ncid, varid_xdst, 'sdn_uom_urn', 'SDN:P06::ULKM');
-        netcdf.putAtt(ncid, varid_xdst, 'coordinates', 'HEAD RNGE' );
+        netcdf.putAtt(ncid, varid_xdst, 'coordinates', 'TIME DEPH LATITUDE LONGITUDE' );
         netcdf.putAtt(ncid, varid_xdst, 'ancillary_variables', 'QCflag, OWTR_QC, MDFL_QC, CSPD_QC, VART_QC');
         
         % Y-Distance
@@ -1046,7 +1046,7 @@ if (R2C_err == 0)
         netcdf.putAtt(ncid, varid_ydst, 'sdn_parameter_urn', '');
         netcdf.putAtt(ncid, varid_ydst, 'sdn_uom_name', 'Kilometres');
         netcdf.putAtt(ncid, varid_ydst, 'sdn_uom_urn', 'SDN:P06::ULKM');
-        netcdf.putAtt(ncid, varid_ydst, 'coordinates', 'HEAD RNGE' );
+        netcdf.putAtt(ncid, varid_ydst, 'coordinates', 'TIME DEPH LATITUDE LONGITUDE' );
         netcdf.putAtt(ncid, varid_ydst, 'ancillary_variables', 'QCflag, OWTR_QC, MDFL_QC, CSPD_QC, VART_QC');
         
         % Spectra Range Cell
@@ -1615,7 +1615,7 @@ if (R2C_err == 0)
         netcdf.putVar(ncid, varid_sdnlocalcdiid, id);
         netcdf.putVar(ncid, varid_sdnreferences, TDS_catalog);
         netcdf.putVar(ncid, varid_sdnxlink, xlink');
-        netcdf.putVar(ncid, varid_speed, radialVelocityMedianFiltered);
+        netcdf.putVar(ncid, varid_speed, velo);
         netcdf.putVar(ncid, varid_direction, head);
         netcdf.putVar(ncid, varid_u, velu);
         netcdf.putVar(ncid, varid_v, velv);
