@@ -675,8 +675,8 @@ if (T2C_err == 0)
         %         ncwriteatt(ncfile,'EWCS','valid_max',double(10.0));
         ncwriteatt(ncfile,'EWCS','scale_factor',double(1));
         ncwriteatt(ncfile,'EWCS','add_offset',double(0));
-        ncwriteatt(ncfile,'EWCS','sdn_parameter_name',char(''));
-        ncwriteatt(ncfile,'EWCS','sdn_parameter_urn',char(''));
+        ncwriteatt(ncfile,'EWCS','sdn_parameter_name',char('Eastward current velocity standard deviation in the water body'));
+        ncwriteatt(ncfile,'EWCS','sdn_parameter_urn',char('SDN:P01::SDEWZZZZ'));
         ncwriteatt(ncfile,'EWCS','sdn_uom_name',char('Metres per second'));
         ncwriteatt(ncfile,'EWCS','sdn_uom_urn',char('SDN:P06::UVAA'));
         ncwriteatt(ncfile,'EWCS','ancillary_variables',char('QCflag, VART_QC'));
@@ -690,8 +690,8 @@ if (T2C_err == 0)
         %         ncwriteatt(ncfile,'NSCS','valid_max',double(10.0));
         ncwriteatt(ncfile,'NSCS','scale_factor',double(1));
         ncwriteatt(ncfile,'NSCS','add_offset',double(0));
-        ncwriteatt(ncfile,'NSCS','sdn_parameter_name',char(''));
-        ncwriteatt(ncfile,'NSCS','sdn_parameter_urn',char(''));
+        ncwriteatt(ncfile,'NSCS','sdn_parameter_name',char('Northward current velocity standard deviation in the water body'));
+        ncwriteatt(ncfile,'NSCS','sdn_parameter_urn',char('SDN:P01::SDNSZZZZ'));
         ncwriteatt(ncfile,'NSCS','sdn_uom_name',char('Metres per second'));
         ncwriteatt(ncfile,'NSCS','sdn_uom_urn',char('SDN:P06::UVAA'));
         ncwriteatt(ncfile,'NSCS','ancillary_variables',char('QCflag, VART_QC'));
