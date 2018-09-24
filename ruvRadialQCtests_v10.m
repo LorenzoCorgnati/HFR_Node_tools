@@ -279,7 +279,7 @@ if (RQC_err == 0)
             % Fill the overall QC variable
             for ii=1:size(overall1h,1)
                 for jj = 1:size(overall1h,2)
-                    if(~isnan(overall1h(ii,jj)))
+                    if(overall1h(ii,jj)~=netcdf.getConstant('NC_FILL_SHORT'))
                         if((tempDer1h(ii,jj) == 1) && (velThr1h(ii,jj) == 1) && (overWater1h(ii,jj) == 1) && (medFilt1h(ii,jj) == 1) && (avgRadBear1h == 1) && (radCount1h == 1))
                             overall1h(ii,jj) = 1;
                         else
