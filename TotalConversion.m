@@ -200,10 +200,10 @@ while(kk>0)
         
         % Scan the tuv files to be converted
         for toBeConverted_idx=1:numToBeConvertedTotals
-            if (toBeConvertedTotals_data{toBeConverted_idx,extensionIndex} == 'tuv')
+            if (toBeConvertedTotals_data{toBeConverted_idx,extensionIndex} == 'tuv') % Codar data
                 [yMDF_err,yearFolder,monthFolder,dayFolder] = yearMonthDayFolder(toBeConvertedTotals_data{toBeConverted_idx,timestampIndex});
                 [TC_err, network_data(network_idx,:), outputFilename,outputFilesize] = tuv2netCDF_v31([network_data{network_idx,inputPathIndex} filesep dayFolder filesep toBeConvertedTotals_data{toBeConverted_idx,filenameIndex}],toBeConvertedTotals_data{toBeConverted_idx,timestampIndex},network_data(network_idx,:),network_columnNames);
-            elseif (toBeConvertedTotals_data{toBeConverted_idx,extensionIndex} == 'nc')
+            elseif (toBeConvertedTotals_data{toBeConverted_idx,extensionIndex} == 'asc') % WERA data
                 % CALL FUNCTION FOR netCDF to netCDF conversion
                 % TO BE DONE
             end
