@@ -62,7 +62,7 @@ if(T2C_err == 0)
         [LSC_err,LLUVSpec] = LLUVSpecChecker(totHeader);
         
         % Retrieve site codes and coordinates
-        [sCC_err,siteCodes,siteLat,siteLon] = siteCodeCoord(totHeader,LLUVSpec);
+        [sCC_err,siteCodes,siteLat,siteLon] = tuvSiteCodeCoord(totHeader,LLUVSpec);
         
         % Retrieve the column names of the data table
         [dTCN_err,tableFields] = dataTableColumnNames(totHeader,LLUVSpec);

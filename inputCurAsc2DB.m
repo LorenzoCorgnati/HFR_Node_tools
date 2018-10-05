@@ -121,18 +121,18 @@ inputPathIndex = find(not(cellfun('isempty', inputPathIndexC)));
 
 % Scan the networks
 for network_idx=1:numNetworks
-    % List the input tuv files
+    % List the input cur_asc files
     try
         ascFiles = rdir([network_data{network_idx,inputPathIndex} '/*/*/*/*.cur_asc']);
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         iCurDB_err = 1;
     end
-    % Insert information about the tuv file into the database (if not yet present)
+    % Insert information about the cur_asc file into the database (if not yet present)
     for asc_idx=1:length(ascFiles)
         % Retrieve the filename
         noFullPathName = ascFiles(asc_idx).name(length(ascFiles(asc_idx).folder)+2:length(ascFiles(asc_idx).name));
-        % Check if the current tuv file is already present on the database
+        % Check if the current cur_asc file is already present on the database
         try
             dbTotals_selectquery = ['SELECT * FROM total_input_tb WHERE network_id = ' '''' network_data{network_idx,network_idIndex} ''' AND filename = ' '''' noFullPathName ''''];
             dbTotals_curs = exec(conn,dbTotals_selectquery);
@@ -156,7 +156,7 @@ for network_idx=1:numNetworks
         
         if(iCurDB_err==0)
             if(rows(dbTotals_curs) == 0)
-                % Retrieve information about the tuv file
+                % Retrieve information about the cur_asc file
                 try
                     % Load the total file as text
                     ascFile = textread(ascFiles(asc_idx).name,  '%s', 'whitespace', '\n');
@@ -190,7 +190,7 @@ for network_idx=1:numNetworks
                     iCurDB_err = 1;
                 end
                 
-                % Retrieve information about the tuv file
+                % Retrieve information about the cur_asc file
                 try
                     ascFileInfo = dir(ascFiles(asc_idx).name);
                     ascFilesize = ascFileInfo.bytes*0.001;
@@ -199,7 +199,7 @@ for network_idx=1:numNetworks
                     iCurDB_err = 1;
                 end
                 
-                % Write tuv info in total_input_tb table
+                % Write cur_asc info in total_input_tb table
                 if(iCurDB_err==0)
                     try
                         % Define a cell array containing the column names to be added

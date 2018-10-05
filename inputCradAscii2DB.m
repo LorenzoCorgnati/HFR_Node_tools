@@ -183,7 +183,7 @@ for network_idx=1:numNetworks
     
     % Scan the stations
     for station_idx=1:numStations
-        % List the input ruv files for the current station
+        % List the input crad_ascii files for the current station
         try
             cradFiles = rdir([station_data{station_idx,inputPathIndex} '/*/*/*/*.crad_ascii']);
         catch err
@@ -191,11 +191,11 @@ for network_idx=1:numNetworks
             iCradDB_err = 1;
         end
         
-        % Insert information about the ruv file into the database (if not yet present)
+        % Insert information about the crad_ascii file into the database (if not yet present)
         for crad_idx=1:length(cradFiles)
             % Retrieve the filename
             noFullPathName = cradFiles(crad_idx).name(length(cradFiles(crad_idx).folder)+2:length(cradFiles(crad_idx).name));
-            % Check if the current ruv file is already present on the database
+            % Check if the current crad_ascii file is already present on the database
             try
                 dbRadials_selectquery = ['SELECT * FROM radial_input_tb WHERE network_id = ' '''' network_data{network_idx,network_idIndex} ''' AND filename = ' '''' noFullPathName ''''];
                 dbRadials_curs = exec(conn,dbRadials_selectquery);
@@ -219,7 +219,7 @@ for network_idx=1:numNetworks
             
             if(iCradDB_err==0)
                 if(rows(dbRadials_curs) == 0)
-                    % Retrieve information about the ruv file
+                    % Retrieve information about the crad_ascii file
                     try
                         % Load the total file as text
                         cradFile = textread(cradFiles(crad_idx).name,  '%s', 'whitespace', '\n');
@@ -250,7 +250,7 @@ for network_idx=1:numNetworks
                     % Evaluate datetime from, Time Stamp
                     [t2d_err,DateTime] = timestamp2datetime(TimeStamp);
                     
-                    % Retrieve information about the ruv file
+                    % Retrieve information about the crad_ascii file
                     try
                         cradFileInfo = dir(cradFiles(crad_idx).name);
                         cradFilesize = cradFileInfo.bytes*0.001;
@@ -259,7 +259,7 @@ for network_idx=1:numNetworks
                         iCradDB_err = 1;
                     end
                     
-                    % Write ruv info in radial_input_tb table
+                    % Write crad_ascii info in radial_input_tb table
                     if(iCradDB_err==0)
                         try
                             % Define a cell array containing the column names to be added
