@@ -53,14 +53,34 @@ end
 if(cA2C_err == 0)
     try
         % Read the file header and the data table
-        [cAHDT_err, ascHeader, tableFields, ascTable] = curAscHeaderDataTable(ascFile);
+        [cA2C_err, ascHeader, tableFields, ascTable] = curAscHeaderDataTable(ascFile);
         
         % Retrieve site codes and coordinates
-        [sCC_err,siteCodes,siteLat,siteLon] = curAscSiteCodeCoord(ascHeader);
+        [cA2C_err,sitesCodes,sitesLat,sitesLon] = curAscSiteCodeCoord(ascHeader);
         
         % Retrieve top-left point of the first gridcell, cell size and number of lon and lat gridcells
-        [sCC_err,topLeftLat,topLeftLon, cellSize, lonCells,latCells] = curAscGridSpec(ascHeader);
+        [cA2C_err,topLeftLat,topLeftLon, cellSize, lonCells,latCells] = curAscGridSpec(ascHeader);
         
+    catch err
+        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+        cA2C_err = 1;
+    end
+end
+
+%%
+
+
+%% Create the regular grid
+
+if(cA2C_err==0)
+    try
+        % Retrieve the lower right coordinates
+        [LLlon, LLlat] = km2lonlat(topLeftLon,topLeftLat,0,-(cellSize*latCells+1));
+        [URlon, URlat] = km2lonlat(topLeftLon,topLeftLat,(cellSize*lonCells+1),0);
+        
+        % Create the lon/lat regular grid
+        [gridLon, gridLat] = LonLat_grid([LLlon, LLlat], [URlon, URlat], cellSize, 'km');
+        gridLat = flipud(gridLat);
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         cA2C_err = 1;
@@ -72,8 +92,13 @@ end
 %% Create the TUV structure and fill it with the total data
 
 if(cA2C_err == 0)
-    % Fill the TUV structure with the total data
-    [cA2C_err, TUV] = totTable2TUV(totTable,tableFields,timestamp,siteLon,siteLat);
+    try
+        % Fill the TUV structure with the total data
+        [cA2C_err,mat_tot] = curAscTable2TUV(ascTable,tableFields,timestamp,gridLon,gridLat);
+    catch err
+        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+        cA2C_err = 1;
+    end
 end
 
 %%
@@ -88,31 +113,65 @@ end
 
 %%
 
-%% Put the total data on a regular grid
-
-if(cA2C_err == 0)
-    %     [TUVgrid,DIM,I] = gridTotals( TUV, 'true', 'true');
-    [gT_err, TUVgrid] = gridTUV(TUV,networkData,networkFields);
-else
-    disp(['[' datestr(now) '] - - ERROR in converting file ' totFilename]);
-    return
-end
-
-if(gT_err == 1)
-    disp(['[' datestr(now) '] - - ERROR in converting file ' totFilename]);
-    return
-end
-
-%%
-
 %% Prepare data
+% Set netcdf format
+ncfmt = 'netcdf4_classic';
 
-if(cA2C_err == 0)
-    % Set netcdf format
-    ncfmt = 'netcdf4_classic';
-    
-    % Set depth value
+% Set total data on a regular grid.
+try
+    lonGrid = gridLon(1,:)';
+    latGrid = gridLat(:,1);
     depth = 0;
+catch err
+    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+    cA2C_err = 1;
+end
+
+if (cA2C_err == 0)
+    % Prepare variables
+    
+    mat_tot.U_grid = NaN.*ones(length(lonGrid),length(latGrid),1);
+    mat_tot.V_grid = NaN.*ones(length(lonGrid),length(latGrid),1);
+    
+    mat_tot.U_std = NaN.*ones(length(lonGrid),length(latGrid),1);
+    mat_tot.V_std = NaN.*ones(length(lonGrid),length(latGrid),1);
+    
+    mat_tot.U_acc = NaN.*ones(length(lonGrid),length(latGrid),1);
+    mat_tot.V_acc = NaN.*ones(length(lonGrid),length(latGrid),1);
+        
+    mat_tot.GDOP = NaN.*ones(length(lonGrid),length(latGrid),1);
+    
+end
+
+if (cA2C_err == 0)
+    % Populate variables
+    try
+        for i=1:length(mat_tot.LonLat(:,1))
+            lonGrid_idx = find(lonGrid==mat_tot.LonLat(i,1));
+            latGrid_idx = find(latGrid==mat_tot.LonLat(i,2));
+            % U and V components of current velocity
+            if (not(isnan(mat_tot.U(i))))
+                mat_tot.U_grid(lonGrid_idx,latGrid_idx,1) = mat_tot.U(i);
+            end
+            if (not(isnan(mat_tot.V(i))))
+                mat_tot.V_grid(lonGrid_idx,latGrid_idx,1) = mat_tot.V(i);
+            end
+            % U and V accuracies
+            if (not(isnan(mat_tot.ErrorEstimates(1,1).Uerr(i))))
+                mat_tot.U_acc(lonGrid_idx,latGrid_idx,1) = sqrt(mat_tot.ErrorEstimates(1,1).Uerr(i));
+            end
+            if (not(isnan(mat_tot.ErrorEstimates(1,1).Verr(i))))
+                mat_tot.V_acc(lonGrid_idx,latGrid_idx,1) = sqrt(mat_tot.ErrorEstimates(1,1).Verr(i));
+            end
+            % GDOP
+            if (not(isnan(mat_tot.ErrorEstimates(1,1).TotalErrors(i))))
+                mat_tot.GDOP(lonGrid_idx,latGrid_idx,1) = mat_tot.ErrorEstimates(1,1).TotalErrors(i);
+            end
+        end
+    catch err
+        display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+        cA2C_err = 1;
+    end
 end
 
 % Set reference time
@@ -132,38 +191,41 @@ end
 % data time window.
 if (cA2C_err == 0)
     try
-        creation = datestr(TUVgrid.TimeStamp);
+        creation = datestr(mat_tot.TimeStamp);
         creationTime = [creation(length(creation)-7:length(creation)) ' UTC'];
         stopTime = creationTime;
-        creation = datevec(TUVgrid.TimeStamp);
+        creation = datevec(mat_tot.TimeStamp);
         creationDate = [num2str(creation(1)) '-' num2str(creation(2)) '-' num2str(creation(3))];
         stopDate = creationDate;
-        creation = datestr(TUVgrid.TimeStamp-1/24);
+        creation = datestr(mat_tot.TimeStamp-1/24);
         if (length(creation) == 11)
             startTime = '00:00:00 UTC';
         else
             startTime = [creation(length(creation)-7:length(creation)) ' UTC'];
         end
-        creation = datevec(TUVgrid.TimeStamp-1/24);
+        creation = datevec(mat_tot.TimeStamp-1/24);
         startDate = [num2str(creation(1)) '-' num2str(creation(2)) '-' num2str(creation(3))];
     catch err
-        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+        display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         cA2C_err = 1;
     end
 end
 
-% Set ADCC compliant data creation and coverage times
+% Set ADCC compliant data creation, coverage times and spatial resolution.
 if (cA2C_err == 0)
     try
         % File creation datetime
         dateCreated = [datestr(now, 'yyyy-mm-dd') 'T' datestr(now, 'HH:MM:SS') 'Z'];
         % Data coverage period
-        coverageStart = addtodate(TUVgrid.TimeStamp, -30, 'minute');
+        coverageStart = addtodate(mat_tot.TimeStamp, -30, 'minute');
         timeCoverageStart = [datestr(coverageStart, 'yyyy-mm-dd') 'T' datestr(coverageStart, 'HH:MM:SS') 'Z'];
-        coverageEnd = addtodate(TUVgrid.TimeStamp, 30, 'minute');
+        coverageEnd = addtodate(mat_tot.TimeStamp, 30, 'minute');
         timeCoverageEnd = [datestr(coverageEnd, 'yyyy-mm-dd') 'T' datestr(coverageEnd, 'HH:MM:SS') 'Z'];
+        % Geospatial resolution
+        latRes = mean(diff(latGrid));
+        lonRes = mean(diff(lonGrid));
     catch err
-        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+        display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         cA2C_err = 1;
     end
 end
@@ -180,24 +242,10 @@ if (cA2C_err == 0)
     end
 end
 
-% Set geographical resolutions
-if (cA2C_err == 0)
-    try
-        % Latitude and longitude resolution (degrees)
-        latDiff = diff(TUVgrid.gridLat(:,1));
-        lonDiff = diff(TUVgrid.gridLon(1,:));
-        latRes = abs(mean(latDiff));
-        lonRes = abs(mean(lonDiff));
-    catch err
-        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-        cA2C_err = 1;
-    end
-end
-
 % Set nc output file name
 if (cA2C_err == 0)
     try
-        ts = datevec(TUVgrid.TimeStamp);
+        ts = datevec(mat_tot.TimeStamp);
         time_str = sprintf('%.4d_%.2d_%.2d_%.2d%.2d',ts(1,1),ts(1,2),ts(1,3),ts(1,4),ts(1,5));
         outputPathIndex = find(not(cellfun('isempty', strfind(networkFields, 'total_HFRnetCDF_folder_path'))));
         network_idIndex = find(not(cellfun('isempty', strfind(networkFields, 'network_id'))));
@@ -228,24 +276,31 @@ if (cA2C_err == 0)
 end
 
 % Set naming authority
-institution_websiteIndex = find(not(cellfun('isempty', strfind(networkFields, 'institution_website'))));
-institution_websiteStr = networkData{institution_websiteIndex};
-tmpStr = strrep(institution_websiteStr,'http://','');
-tmpStr = strrep(tmpStr,'www.','');
-tmpStr = strrep(tmpStr,'/','');
-splitStr = strsplit(tmpStr,'.');
-naming_authorityStr = [];
-for split_idx=length(splitStr):-1:1
-    naming_authorityStr = [naming_authorityStr splitStr{split_idx}];
-    if(split_idx~=1)
-        naming_authorityStr = [naming_authorityStr '.'];
+if (cA2C_err == 0)
+    try
+        institution_websiteIndex = find(not(cellfun('isempty', strfind(networkFields, 'institution_website'))));
+        institution_websiteStr = networkData{institution_websiteIndex};
+        tmpStr = strrep(institution_websiteStr,'http://','');
+        tmpStr = strrep(tmpStr,'www.','');
+        tmpStr = strrep(tmpStr,'/','');
+        splitStr = strsplit(tmpStr,'.');
+        naming_authorityStr = [];
+        for split_idx=length(splitStr):-1:1
+            naming_authorityStr = [naming_authorityStr splitStr{split_idx}];
+            if(split_idx~=1)
+                naming_authorityStr = [naming_authorityStr '.'];
+            end
+        end
+        naming_authorityStr= naming_authorityStr(~isspace(naming_authorityStr));
+    catch err
+        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+        cA2C_err = 1;
     end
 end
-naming_authorityStr= naming_authorityStr(~isspace(naming_authorityStr));
 
 % Set collection time
 if (cA2C_err == 0)
-    ts = datevec(TUVgrid.TimeStamp);
+    ts = datevec(mat_tot.TimeStamp);
     time_coll = [datestr(ts, 'yyyy-mm-dd') 'T' datestr(ts, 'HH:MM:SS') 'Z'];
 end
 
@@ -255,18 +310,18 @@ EDMO_codeIndex = find(not(cellfun('isempty', strfind(networkFields, 'EDMO_code')
 EDMO_code = networkData{EDMO_codeIndex};
 site_code = EDIOS_Series_ID;
 platform_code = [EDIOS_Series_ID '_Total'];
-dataID = [EDIOS_Series_ID '_Total_' datestr(TUVgrid.TimeStamp, 'yyyy-mm-dd') 'T' datestr(TUVgrid.TimeStamp, 'HH:MM:SS') 'Z'];
+dataID = [EDIOS_Series_ID '_Total_' datestr(mat_tot.TimeStamp, 'yyyy-mm-dd') 'T' datestr(mat_tot.TimeStamp, 'HH:MM:SS') 'Z'];
 metadata_pageIndex = find(not(cellfun('isempty', strfind(networkFields, 'metadata_page'))));
 TDS_catalog = networkData{metadata_pageIndex};
 xlink = ['<sdn_reference xlink:href="' TDS_catalog '" xlink:role="" xlink:type="URL"/>'];
 
-% Get dimensions
+% Gets dimensions
 if (cA2C_err == 0)
     try
-        time_dim = size(TUVgrid.TimeStamp,1);
+        time_dim = size(mat_tot.TimeStamp,1);
         %         time_dim = netcdf.getConstant('unlimited');
-        lat_dim = size(TUVgrid.gridLat,1);
-        lon_dim = size(TUVgrid.gridLon,2);
+        lat_dim = size(latGrid,1);
+        lon_dim = size(lonGrid,1);
         depth_dim = 1;
         maxSite_dim = 50;
         refMax_dim = 1;
@@ -274,7 +329,7 @@ if (cA2C_err == 0)
         string50_dim = 50;
         string250_dim = 250;
     catch err
-        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+        display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         cA2C_err = 1;
     end
 end
@@ -283,7 +338,7 @@ end
 try
     delete(ncfile);
 catch err
-    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+    display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     cA2C_err = 1;
 end
 
@@ -316,16 +371,17 @@ end
 if (cA2C_err == 0)
     try
         % Build the names of the files of the previous two hours
-        [twoHoursBefore, oneHourBefore] = twoPastHours(TUVgrid.TimeStamp);
+        [twoHoursBefore, oneHourBefore] = twoPastHours(mat_tot.TimeStamp);
         Total_QC_params.TempDerThr.hour2 = [ncFilePath(1:length(ncFilePath)-length(twoHoursBefore.fP)) twoHoursBefore.fP filesep networkData{network_idIndex} '_TOTL_' twoHoursBefore.TS '.nc'];
         Total_QC_params.TempDerThr.hour1 = [ncFilePath(1:length(ncFilePath)-length(oneHourBefore.fP)) oneHourBefore.fP filesep networkData{network_idIndex} '_TOTL_' oneHourBefore.TS '.nc'];
         
-        [overall_QCflag, varianceThreshold_QCflag, temporalDerivativeThreshold_QCflag, GDOP_QCflag, dataDensity_QCflag, velocityThreshold_QCflag] = tuvTotalQCtests_v10(TUVgrid, Total_QC_params);
+        [overall_QCflag, varianceThreshold_QCflag, temporalDerivativeThreshold_QCflag, GDOP_QCflag, dataDensity_QCflag, velocityThreshold_QCflag] = curAscTotalQCtests_v10(mat_tot, Total_QC_params);
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         cA2C_err = 1;
     end
 end
+
 
 %%
 
@@ -334,15 +390,16 @@ end
 if (cA2C_err == 0)
     try
         
-        TUVgrid.U_grid(isnan(TUVgrid.U_grid)) = netcdf.getConstant('NC_FILL_DOUBLE');
-        TUVgrid.V_grid(isnan(TUVgrid.V_grid)) = netcdf.getConstant('NC_FILL_DOUBLE');
+        mat_tot.U_grid(isnan(mat_tot.U_grid)) = netcdf.getConstant('NC_FILL_DOUBLE');
+        mat_tot.V_grid(isnan(mat_tot.V_grid)) = netcdf.getConstant('NC_FILL_DOUBLE');
         
-        TUVgrid.U_std(isnan(TUVgrid.U_std)) = netcdf.getConstant('NC_FILL_DOUBLE');
-        TUVgrid.V_std(isnan(TUVgrid.V_std)) = netcdf.getConstant('NC_FILL_DOUBLE');
+        mat_tot.U_std(isnan(mat_tot.U_std)) = netcdf.getConstant('NC_FILL_DOUBLE');
+        mat_tot.V_std(isnan(mat_tot.V_std)) = netcdf.getConstant('NC_FILL_DOUBLE');
         
-        TUVgrid.covariance(isnan(TUVgrid.covariance)) = netcdf.getConstant('NC_FILL_DOUBLE');
-        
-        TUVgrid.GDOP(isnan(TUVgrid.GDOP)) = netcdf.getConstant('NC_FILL_DOUBLE');
+        mat_tot.U_acc(isnan(mat_tot.U_acc)) = netcdf.getConstant('NC_FILL_DOUBLE');
+        mat_tot.V_acc(isnan(mat_tot.V_acc)) = netcdf.getConstant('NC_FILL_DOUBLE');
+                
+        mat_tot.GDOP(isnan(mat_tot.GDOP)) = netcdf.getConstant('NC_FILL_DOUBLE');
         
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
@@ -353,14 +410,13 @@ end
 %%
 
 %% Set the time, position and depth quality flags
-
 if (cA2C_err == 0)
     try
         % Time quality flag
         sdnTime_QCflag = 1;
         % Position quality flag
-        sdnPosition_QCflag = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(size(TUVgrid.gridLat)));
-        sdnPosition_QCflag(TUVgrid.U_grid~=netcdf.getConstant('NC_FILL_DOUBLE')) = 1;
+        sdnPosition_QCflag = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(length(lonGrid),length(latGrid),1));
+        sdnPosition_QCflag(mat_tot.U_grid~=netcdf.getConstant('NC_FILL_DOUBLE')) = 1;
         
         % Depth quality flag
         sdnDepth_QCflag = 1;
@@ -454,7 +510,13 @@ if (cA2C_err == 0)
             'FillValue',netcdf.getConstant('NC_FILL_DOUBLE'),...
             'Format',ncfmt);
         
-        nccreate(ncfile,'CCOV',...
+        nccreate(ncfile,'UACC',...
+            'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
+            'Datatype','double',...
+            'FillValue',netcdf.getConstant('NC_FILL_DOUBLE'),...
+            'Format',ncfmt);
+        
+        nccreate(ncfile,'VACC',...
             'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
             'Datatype','double',...
             'FillValue',netcdf.getConstant('NC_FILL_DOUBLE'),...
@@ -674,7 +736,7 @@ if (cA2C_err == 0)
         ncwriteatt(ncfile,'EWCS','sdn_uom_name',char('Metres per second'));
         ncwriteatt(ncfile,'EWCS','sdn_uom_urn',char('SDN:P06::UVAA'));
         ncwriteatt(ncfile,'EWCS','ancillary_variables',char('QCflag, VART_QC'));
-        
+                
         ncwriteatt(ncfile,'NSCS','long_name',char('Standard Deviation of Surface Northward Sea Water Velocity'));
         %        ncwriteatt(ncfile,'NSCS','standard_name',char('surface_northward_sea_water_velocity_standard_error'));
         ncwriteatt(ncfile,'NSCS','units',char('m s-1'));
@@ -690,20 +752,29 @@ if (cA2C_err == 0)
         ncwriteatt(ncfile,'NSCS','sdn_uom_urn',char('SDN:P06::UVAA'));
         ncwriteatt(ncfile,'NSCS','ancillary_variables',char('QCflag, VART_QC'));
         
-        ncwriteatt(ncfile,'CCOV','long_name',char('Covariance of Surface Sea Water Velocity'));
-        %         ncwriteatt(ncfile,'CCOV','standard_name',char('surface_sea_water_velocity_covariance'));
-        ncwriteatt(ncfile,'CCOV','units',char('m2 s-2'));
-        ncwriteatt(ncfile,'CCOV','valid_range',[double(-10.0),double(10.0)]);
-        ncwriteatt(ncfile,'CCOV','coordinates',char('TIME DEPH LATITUDE LONGITUDE'));
-        %         ncwriteatt(ncfile,'CCOV','valid_min',double(-10.0));
-        %         ncwriteatt(ncfile,'CCOV','valid_max',double(10.0));
-        ncwriteatt(ncfile,'CCOV','scale_factor',double(1));
-        ncwriteatt(ncfile,'CCOV','add_offset',double(0));
-        ncwriteatt(ncfile,'CCOV','sdn_parameter_name',char(''));
-        ncwriteatt(ncfile,'CCOV','sdn_parameter_urn',char(''));
-        ncwriteatt(ncfile,'CCOV','sdn_uom_name',char('Square metres per second squared'));
-        ncwriteatt(ncfile,'CCOV','sdn_uom_urn',char('SDN:P06::SQM2'));
-        ncwriteatt(ncfile,'CCOV','ancillary_variables',char('QCflag'));
+        ncwriteatt(ncfile,'UACC','long_name',char('Accuracy Of Surface Eastward Sea Water Velocity'));
+        ncwriteatt(ncfile,'UACC','units',char('m s-1'));
+        ncwriteatt(ncfile,'UACC','valid_range',[double(-10.0),double(10.0)]);
+        ncwriteatt(ncfile,'UACC','coordinates',char('TIME DEPH LATITUDE LONGITUDE'));
+        ncwriteatt(ncfile,'UACC','scale_factor',double(1));
+        ncwriteatt(ncfile,'UACC','add_offset',double(0));
+        ncwriteatt(ncfile,'UACC','sdn_parameter_name',char(''));
+        ncwriteatt(ncfile,'UACC','sdn_parameter_urn',char(''));
+        ncwriteatt(ncfile,'UACC','sdn_uom_name',char('Metres per second'));
+        ncwriteatt(ncfile,'UACC','sdn_uom_urn',char('SDN:P06::UVAA'));
+        ncwriteatt(ncfile,'UACC','ancillary_variables',char('QCflag, VART_QC'));
+        
+        ncwriteatt(ncfile,'VACC','long_name',char('Accuracy Of Surface Northward Sea Water Velocity'));
+        ncwriteatt(ncfile,'VACC','units',char('m s-1'));
+        ncwriteatt(ncfile,'VACC','valid_range',[double(-10.0),double(10.0)]);
+        ncwriteatt(ncfile,'VACC','coordinates',char('TIME DEPH LATITUDE LONGITUDE'));
+        ncwriteatt(ncfile,'VACC','scale_factor',double(1));
+        ncwriteatt(ncfile,'VACC','add_offset',double(0));
+        ncwriteatt(ncfile,'VACC','sdn_parameter_name',char(''));
+        ncwriteatt(ncfile,'VACC','sdn_parameter_urn',char(''));
+        ncwriteatt(ncfile,'VACC','sdn_uom_name',char('Metres per second'));
+        ncwriteatt(ncfile,'VACC','sdn_uom_urn',char('SDN:P06::UVAA'));
+        ncwriteatt(ncfile,'VACC','ancillary_variables',char('QCflag, VART_QC'));
         
         ncwriteatt(ncfile,'GDOP','long_name',char('Geometrical Dilution of precision'));
         %         ncwriteatt(ncfile,'GDOP','standard_name',char('gdop'));
@@ -767,7 +838,7 @@ if (cA2C_err == 0)
         ncwriteatt(ncfile,'VART_QC','flag_values',int16([0 1 2 3 4 7 8 9]));
         ncwriteatt(ncfile,'VART_QC','flag_meanings',char('unknown good_data probably_good_data potentially_correctable_bad_data bad_data nominal_value interpolated_value missing_value'));
         ncwriteatt(ncfile,'VART_QC','comment',char(['OceanSITES quality flagging for variance threshold QC test. ' ...
-            'Test not applicable to Direction Finding systems. The Temporal Derivative test is applied.' ...
+            'Test not applicable. The Temporal Derivative test is applied.' ...
             'Threshold set to ' num2str(Total_QC_params.TempDerThr.threshold) ' m/s. ']));
         ncwriteatt(ncfile,'VART_QC','scale_factor',int16(1));
         ncwriteatt(ncfile,'VART_QC','add_offset',int16(0));
@@ -885,10 +956,10 @@ if (cA2C_err == 0)
         ncwriteatt(ncfile,'SCDT','sdn_uom_urn',char('SDN:P06::UUUU'));
         
         %% Writes values in variables
-        %         ncwrite(ncfile,'TIME',int32((TUVgrid.TimeStamp-timeref)*86400));
-        ncwrite(ncfile,'TIME',single(TUVgrid.TimeStamp-timeref));
-        ncwrite(ncfile,'LATITUDE',TUVgrid.gridLat(:,1));
-        ncwrite(ncfile,'LONGITUDE',TUVgrid.gridLon(1,:));
+        %         ncwrite(ncfile,'TIME',int32((mat_tot.TimeStamp-timeref)*86400));
+        ncwrite(ncfile,'TIME',single(mat_tot.TimeStamp-timeref));
+        ncwrite(ncfile,'LATITUDE',latGrid);
+        ncwrite(ncfile,'LONGITUDE',lonGrid);
         ncwrite(ncfile,'crs',0);
         ncwrite(ncfile,'SDN_CRUISE',site_code');
         ncwrite(ncfile,'SDN_STATION',platform_code');
@@ -897,28 +968,29 @@ if (cA2C_err == 0)
         ncwrite(ncfile,'SDN_REFERENCES',TDS_catalog');
         ncwrite(ncfile,'SDN_XLINK',xlink');
         ncwrite(ncfile,'DEPH',depth);
-        ncwrite(ncfile,'EWCT',TUVgrid.U_grid');
-        ncwrite(ncfile,'NSCT',TUVgrid.V_grid');
-        ncwrite(ncfile,'EWCS',TUVgrid.U_std');
-        ncwrite(ncfile,'NSCS',TUVgrid.V_std');
-        ncwrite(ncfile,'CCOV',TUVgrid.covariance');
-        ncwrite(ncfile,'GDOP',TUVgrid.GDOP');
-        ncwrite(ncfile,'NARX',length(siteLat));
-        ncwrite(ncfile,'NATX',length(siteLat));
-        ncwrite(ncfile,'SLTR',siteLat');
-        ncwrite(ncfile,'SLNR',siteLon');
-        ncwrite(ncfile,'SLTT',siteLat');
-        ncwrite(ncfile,'SLNT',siteLon');
-        ncwrite(ncfile,'SCDR',siteCodes');
-        ncwrite(ncfile,'SCDT',siteCodes');
+        ncwrite(ncfile,'EWCT',mat_tot.U_grid);
+        ncwrite(ncfile,'NSCT',mat_tot.V_grid);
+        ncwrite(ncfile,'EWCS',mat_tot.U_std);
+        ncwrite(ncfile,'NSCS',mat_tot.V_std);
+        ncwrite(ncfile,'UACC',mat_tot.U_acc);
+        ncwrite(ncfile,'VACC',mat_tot.V_acc);
+        ncwrite(ncfile,'GDOP',mat_tot.GDOP);
+        ncwrite(ncfile,'NARX',length(sitesLat));
+        ncwrite(ncfile,'NATX',length(sitesLat));
+        ncwrite(ncfile,'SLTR',sitesLat');
+        ncwrite(ncfile,'SLNR',sitesLon');
+        ncwrite(ncfile,'SLTT',sitesLat');
+        ncwrite(ncfile,'SLNT',sitesLon');
+        ncwrite(ncfile,'SCDR',sitesCodes');
+        ncwrite(ncfile,'SCDT',sitesCodes');
         ncwrite(ncfile,'TIME_SEADATANET_QC',sdnTime_QCflag);
-        ncwrite(ncfile,'POSITION_SEADATANET_QC',sdnPosition_QCflag');
+        ncwrite(ncfile,'POSITION_SEADATANET_QC',sdnPosition_QCflag);
         ncwrite(ncfile,'DEPTH_SEADATANET_QC',sdnDepth_QCflag);
-        ncwrite(ncfile,'QCflag',overall_QCflag');
-        ncwrite(ncfile,'VART_QC',temporalDerivativeThreshold_QCflag');
-        ncwrite(ncfile,'GDOP_QC',GDOP_QCflag');
-        ncwrite(ncfile,'DDNS_QC',dataDensity_QCflag');
-        ncwrite(ncfile,'CSPD_QC',velocityThreshold_QCflag');
+        ncwrite(ncfile,'QCflag',overall_QCflag);
+        ncwrite(ncfile,'VART_QC',temporalDerivativeThreshold_QCflag);
+        ncwrite(ncfile,'GDOP_QC',GDOP_QCflag);
+        ncwrite(ncfile,'DDNS_QC',dataDensity_QCflag);
+        ncwrite(ncfile,'CSPD_QC',velocityThreshold_QCflag);
         
         %% Define global attributes
         
@@ -944,8 +1016,7 @@ if (cA2C_err == 0)
         ncwriteatt(ncfile,'/','institution',char(networkData{institution_nameIndex}));
         ncwriteatt(ncfile,'/','institution_edmo_code',char(num2str(EDMO_code)));
         ncwriteatt(ncfile,'/','data_assembly_center',char('European HFR Node'));
-        ncwriteatt(ncfile,'/','id',char(dataID));
-        
+        ncwriteatt(ncfile,'/','id',char(dataID));        
         % Geo-spatial-temporal
         ncwriteatt(ncfile,'/','data_type', char('HF radar total data'));
         ncwriteatt(ncfile,'/','feature_type',char('surface'));
@@ -960,7 +1031,7 @@ if (cA2C_err == 0)
         ncwriteatt(ncfile,'/','geospatial_vertical_min', char('0'));
         ncwriteatt(ncfile,'/','geospatial_vertical_max', char('4'));
         ncwriteatt(ncfile, '/','time_coverage_start',char(timeCoverageStart));
-        ncwriteatt(ncfile, '/','time_coverage_end',char(timeCoverageEnd));
+        ncwriteatt(ncfile, '/','time_coverage_end',char(timeCoverageEnd));        
         % Conventions used
         ncwriteatt(ncfile,'/','format_version',char('v2.1'));
         ncwriteatt(ncfile,'/','Conventions',char('CF-1.6, OceanSITES-Manual-1.2, Copernicus-InSituTAC-SRD-1.4, CopernicusInSituTAC-ParametersList-3.1.0, Unidata, ACDD, INSPIRE'));
@@ -974,7 +1045,7 @@ if (cA2C_err == 0)
         licenseIndex = find(not(cellfun('isempty', strfind(networkFields, 'license'))));
         ncwriteatt(ncfile,'/','license',char(networkData{licenseIndex}));
         acknowledgmentIndex = find(not(cellfun('isempty', strfind(networkFields, 'acknowledgment'))));
-        ncwriteatt(ncfile,'/','acknowledgment',char(networkData{acknowledgmentIndex}));
+        ncwriteatt(ncfile,'/','acknowledgment',char(networkData{acknowledgmentIndex}));        
         % Provenance
         ncwriteatt(ncfile,'/','date_created',char(dateCreated));
         ncwriteatt(ncfile,'/','history',char([time_coll ' data collected. ' dateCreated ' netCDF file created and sent to European HFR Node']));
@@ -1033,7 +1104,7 @@ if (cA2C_err == 0)
         ncwriteatt(ncfile,'/','references',char('HFR_Progs Matlab Documentation - Copyright (C) 2006-7 David M. Kaplan; Otero,M. (2008).NETCDF DESCRIPTION FOR NEAR REAL-TIME SURFACE CURRENTS PRODUCED BY THE HF-RADAR NETWORK. https://cordc.ucsd.edu/projects/mapping/documents/HFRNet_RTV-NetCDF.pdf'));
         
     catch err
-        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+        display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         cA2C_err = 1;
     end
 end

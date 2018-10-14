@@ -1,7 +1,7 @@
-%% tuvTotalQCtests_v10.m
+%% curAscTotalQCtests_v10.m
 % This function performs the QC tests on total velocity data. The tests are
 % the ones defined for the European common data and metadata model. This
-% function is suited for the conversion of native .tuv Codar files in to
+% function is suited for the conversion of native .cur_asc WERA files in to
 % netCDF files compliant to the European common data and metadata model.
 % In particular, the following tests are performed:
 %       - Velocity threshold
@@ -25,31 +25,31 @@
 %         velThr: Velocity threshold quality flags
 
 % Author: Lorenzo Corgnati
-% Date: June 18, 2018
+% Date: October 14, 2018
 
 % E-mail: lorenzo.corgnati@sp.ismar.cnr.it
 %%
 
-function [overall, varThr, tempDer, GDOPThr, dataDens, velThr] = tuvTotalQCtests_v10(mat_tot, Total_QC_params)
+function [overall, varThr, tempDer, GDOPThr, dataDens, velThr] = curAscTotalQCtests_v10(mat_tot, Total_QC_params)
 
-disp(['[' datestr(now) '] - - ' 'tuvTotalQCtests_v10.m started.']);
+disp(['[' datestr(now) '] - - ' 'curAscTotalQCtests_v10.m started.']);
 
 TQC_err = 0;
 
 %% Prepare QC flag variables
 
-overall = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(size(mat_tot.gridLat)));
-varThr = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(size(mat_tot.gridLat)));
-tempDer = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(size(mat_tot.gridLat)));
-GDOPThr = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(size(mat_tot.gridLat)));
-dataDens = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(size(mat_tot.gridLat)));
-velThr = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(size(mat_tot.gridLat)));
+overall = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(size(mat_tot.U_grid)));
+varThr = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(size(mat_tot.U_grid)));
+tempDer = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(size(mat_tot.U_grid)));
+GDOPThr = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(size(mat_tot.U_grid)));
+dataDens = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(size(mat_tot.U_grid)));
+velThr = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(size(mat_tot.U_grid)));
 
 %%
 
 %% Prepare variables for QC tests
 % Variance Threshold QC test
-variance = ((mat_tot.U_grid.^2).*(mat_tot.U_std).^2) + ((mat_tot.V_grid.^2).*(mat_tot.V_std).^2);
+variance = ((mat_tot.U_grid.^2).*(mat_tot.U_acc).^2) + ((mat_tot.V_grid.^2).*(mat_tot.V_acc).^2);
 
 % Velocity Threshold QC test
 totVel = sqrt(((mat_tot.U_grid).^2) + ((mat_tot.V_grid).^2));
@@ -73,12 +73,15 @@ if (TQC_err == 0)
         velThr(totVel<=Total_QC_params.VelThr) = 1;
         
         % GDOP Threshold quality flags
-        GDOPThr(mat_tot.GDOP>Total_QC_params.GDOPThr) = 4;
-        GDOPThr(mat_tot.GDOP<=Total_QC_params.GDOPThr) = 1;
+        if(numel(isnan(mat_tot.GDOP))<numel(mat_tot.GDOP))
+            GDOPThr(mat_tot.GDOP>Total_QC_params.GDOPThr) = 4;
+            GDOPThr(mat_tot.GDOP<=Total_QC_params.GDOPThr) = 1;
+        else
+            GDOPThr(~isnan(totVel)) = 0;
+        end
         
         % Data Density Threshold quality flag
-        dataDens(mat_tot.DDENS<Total_QC_params.DataDensityThr) = 4;
-        dataDens(mat_tot.DDENS>=Total_QC_params.DataDensityThr) = 1;
+        dataDens(~isnan(totVel)) = 1;
         
         % Variance Threshold quality flags
         varThr(variance>Total_QC_params.VarThr) = 4;

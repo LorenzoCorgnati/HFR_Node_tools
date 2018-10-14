@@ -57,7 +57,7 @@ velThr = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(length(lonGrid),length(
 
 %% Prepare variables for QC tests
 % Variance Threshold QC test
-varVec = sqrt((mat_tot.ErrorEstimates(1,1).Uerr).^2 + (mat_tot.ErrorEstimates(1,1).Verr).^2).*0.0001;
+varVec = ((((mat_tot.U).^2).*(mat_tot.ErrorEstimates(1,1).Uerr).^2) + (((mat_tot.V).^2).*(mat_tot.ErrorEstimates(1,1).Verr).^2)).*0.0001;
 varVec(isnan(mat_tot.U)) = NaN; % exclude grid points where no velocity data is present
 
 % Velocity Threshold and GDOP Threshold QC tests
