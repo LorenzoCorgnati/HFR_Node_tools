@@ -30,6 +30,12 @@ disp(['[' datestr(now) '] - - ' 'TotalConversion_main started.']);
 
 %%
 
+%% Set HFR provider username
+
+HFRPusername = 'lorenzo';
+
+%%
+
 %% Set database parameters
 
 sqlConfig.user = 'HFR_lorenzo';
@@ -57,11 +63,60 @@ while(kk>0)
     
     %%
     
-    %% Query the database for retrieving network data
+    %% Query the database for retrieving the networks managed by the HFR provider username
     
     % Set and exectute the query
     try
-        network_selectquery = 'SELECT * FROM network_tb';
+        HFRPusername_selectquery = ['SELECT network_id FROM account_tb WHERE username = ' '''' HFRPusername ''''];
+        HFRPusername_curs = exec(conn,HFRPusername_selectquery);
+    catch err
+        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+        TC_err = 1;
+    end
+    if(TC_err==0)
+        disp(['[' datestr(now) '] - - ' 'Query to account_tb table successfully executed.']);
+    end
+    
+    % Fetch data
+    try
+        HFRPusername_curs = fetch(HFRPusername_curs);
+        HFRPusername_data = HFRPusername_curs.Data;
+    catch err
+        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+        TC_err = 1;
+    end
+    if(TC_err==0)
+        disp(['[' datestr(now) '] - - ' 'Data from account_tb table successfully fetched.']);
+    end
+    
+    % Close cursor
+    try
+        close(HFRPusername_curs);
+    catch err
+        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+        TC_err = 1;
+    end
+    if(TC_err==0)
+        disp(['[' datestr(now) '] - - ' 'Cursor to account_tb table successfully closed.']);
+    end
+    
+    %%
+    
+    %% Retrieve networks ID managed by the HFR provider username
+    
+    HFRPnetworks = regexp(HFRPusername_data{1}, '[ ,;]+', 'split');    
+    
+    %%
+    
+    %% Query the database for retrieving data from managed networks
+    
+    % Set and exectute the query
+    try
+        network_selectquery = 'SELECT * FROM network_tb WHERE network_id = ''';
+        for HFRPntw_idx=1:length(HFRPnetworks)-1
+            network_selectquery = [network_selectquery HFRPnetworks{HFRPntw_idx} ''' OR network_id = ' ''''];
+        end
+        network_selectquery = [network_selectquery HFRPnetworks{length(HFRPnetworks)} ''''];
         network_curs = exec(conn,network_selectquery);
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
