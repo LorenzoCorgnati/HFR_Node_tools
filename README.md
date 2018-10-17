@@ -1,5 +1,5 @@
 # HFR_Node_tools
-These applications are written in Matlab language and they are based on HFR_Progs_2_1_2 and M_Map toolboxes, and the architecture of the workflow is based on a MySQL database containing information about da and metadata. The applications are designed for High Frequency Radar (HFR) data management according to the European HFR node processing workflow, thus generating radial and total velocity files in netCDF format according to the European standard data and metadata model for near real time HFR current data.
+These applications are written in Matlab language and they are based on HFR_Progs_2_1_2 and M_Map toolboxes, and the architecture of the workflow is based on a MySQL database containing information about data and metadata. The applications are designed for High Frequency Radar (HFR) data management according to the European HFR node processing workflow, thus generating radial and total velocity files in netCDF format according to the European standard data and metadata model for near real time HFR current data.
 
 The database is composed by the following tables:
 - network_tb: it contains the general information about the HFR network producing the radial and total files. These information will be used for the metadata content of the netCDF files.
@@ -12,8 +12,8 @@ The database is composed by the following tables:
 The applications are intended to:
 - load radial files information onto the database in table radial_input_tb;
 - load total files information onto the database in table total_input_tb;
-- convert Codar native .tuv files for total currents into the European standard data and metadata model for near real time HFR current data;
-- convert Codar native .ruv files for radial currents into the European standard data and metadata model for near real time HFR current data and combine them for generating total current files according to the European standard data and metadata model for near real time HFR current data.
+- convert Codar native .tuv files and WERA native .cur_asc files for total currents into the European standard data and metadata model for near real time HFR current data;
+- convert Codar native .ruv files and WERA native .crad_ascii files for radial currents into the European standard data and metadata model for near real time HFR current data and combine them for generating total current files according to the European standard data and metadata model for near real time HFR current data.
 
 General information for the tables network_tb and station_tb are loaded onto the database via a webform to be filled by the data providers.
 
@@ -21,13 +21,13 @@ All generated radial and total netCDF files are quality controlled according the
 
 The whole workflow is intended to run automatically to continuously convert and combine near real time HFR data produced by data providers.
 
-The application inputRUV2DB.m loads radial files information onto the database in table radial_input_tb.
+The applications inputRUV2DB.m and inputCradAScii2DB.m load radial files information onto the database in table radial_input_tb.
 
-The application inputTUV2DB.m loads total files information onto the database in table total_input_tb.
+The applications inputTUV2DB.m and inputCurAsc2DB.m load total files information onto the database in table total_input_tb.
 
-The application HFR_Combiner.m converts Codar native .ruv files for radial currents into the European standard data and metadata model for near real time HFR current data and combines them for generating total current files according to the European standard data and metadata model for near real time HFR current data.
+The application HFR_Combiner.m converts Codar native .ruv files and WERA native .crad_ascii files for radial currents into the European standard data and metadata model for near real time HFR current data and combines them for generating total current files according to the European standard data and metadata model for near real time HFR current data.
 
-The application Total_Conversion.m converts Codar native .tuv files for total currents into the European standard data and metadata model for near real time HFR current data.
+The application Total_Conversion.m converts Codar native .tuv files and WERA native .cur_asc files for total currents into the European standard data and metadata model for near real time HFR current data.
 
 
 The required toolboxes are:
@@ -41,7 +41,7 @@ The required toolboxes are:
 
 Author: Lorenzo Corgnati
 
-Date: August 7, 2018
+Date: October 17, 2018
 
 E-mail: lorenzo.corgnati@sp.ismar.cnr.it
 
