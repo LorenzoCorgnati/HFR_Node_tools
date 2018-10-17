@@ -31,8 +31,8 @@ The application Total_Conversion.m converts Codar native .tuv files and WERA nat
 
 
 The required toolboxes are:
-- HFR_Progs-2.1.2 (https://cencalarchive.org/~cocmpmb/cocmp-wiki/index.php/Documentation:HFR_Progs); 
-- M_Map (http://www2.ocgy.ubc.ca/~rich/private/mapug.html#p1); 
+- HFR_Progs-2.1.2 (https://github.com/rowg/hfrprogs); 
+- M_Map (https://www.eoas.ubc.ca/~rich/map.html); 
 - GSHHS (http://www.ngdc.noaa.gov/mgg/shorelines/data/gshhs/); 
 - Nctoolbox-1.1.3 (https://github.com/nctoolbox/nctoolbox); 
 - mysql-connector-java-5.1.17 driver (https://mvnrepository.com/artifact/mysql/mysql-connector-java/5.1.17); 
