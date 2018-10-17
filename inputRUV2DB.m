@@ -1,7 +1,7 @@
 %% inputRUV2DB.m
 % This application lists the input ruv files pushed by the HFR data providers
 % and insert into the HFR database the information needed for the
-% combination of radial files into totals and for the generation of the
+% combination of Codar radial files into totals and for the generation of the
 % radial and total data files into the European standard data model.
 
 % Author: Lorenzo Corgnati

@@ -1,6 +1,7 @@
 %% yearMonthDayFolder.m
 % This function builds the strings for year folder, month folder and day folder
-% accoridng to the folder structure YYYY/MM/DD.
+% according to the folder structure YYYY/YYYY_MM/ YYYY_MM _DD.
+
 
 % INPUT:
 %         ts: timestamp

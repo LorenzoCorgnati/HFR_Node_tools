@@ -1,8 +1,7 @@
 %% tuvTotalQCtests_v10.m
-% This function performs the QC tests on total velocity data. The tests are
-% the ones defined for the European common data and metadata model. This
-% function is suited for the conversion of native .tuv Codar files in to
-% netCDF files compliant to the European common data and metadata model.
+% This function performs the QC tests on Codar native tuv total velocity data. 
+% The tests are defined the European common QC model, compliant to CMEMS needs. 
+
 % In particular, the following tests are performed:
 %       - Velocity threshold
 %       - GDOP threshold

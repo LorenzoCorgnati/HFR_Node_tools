@@ -1,6 +1,6 @@
 %% radialFolderBuilder_v21.m
 % This function builds the folder structure for storing the converted nc files
-% for total data and the full filename of the converted nc total file,
+% for radial data and the full filename of the converted nc radial file,
 % according to the structure YYYY/YYYY_MM/YYYY_MM_DD/.
 
 % INPUT:

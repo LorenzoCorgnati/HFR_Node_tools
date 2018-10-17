@@ -1,7 +1,7 @@
 %% inputTUV2DB.m
 % This application lists the input tuv files pushed by the HFR data providers
 % and insert into the HFR database the information needed for the conversion of
-% the total data files into the European standard data
+% the Codar total data files into the European standard data
 % model.
 
 % Author: Lorenzo Corgnati

@@ -14,8 +14,7 @@
 %         bear: radial velocity bearing variable from radial data
 %         lond: longitude coordinates of the grid for radial velocities
 %         latd: latitude coordinates of the grid for radial velocities
-%         owtr: Vector Over Water quality flags computed in
-%               Radial2netCDF_v20.m
+%         owtr: Vector Over Water quality flags 
 %         etmp: temporal quality variable from radial data
 %         head: radial velocity heading variable from radial data
 %         radVel: radial velocities from radial data
