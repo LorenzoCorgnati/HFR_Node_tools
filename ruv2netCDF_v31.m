@@ -1427,11 +1427,11 @@ if (R2C_err == 0)
         netcdf.putAtt(ncid, varid_global, 'standard_name_vocabulary', 'NetCDF Climate and Forecast (CF) Metadata Convention Standard Name Table Version 1.6');
         netcdf.putAtt(ncid, varid_global, 'sensor', 'CODAR SeaSonde');
         netcdf.putAtt(ncid, varid_global, 'institution_reference', institution_websiteStr);
-        netcdf.putAtt(ncid, varid_global, 'references', 'HFR_Progs Matlab Documentation - Copyright (C) 2006-7 David M. Kaplan; Otero,M. (2013). ENCODING NETCDF RADIAL DATA IN THE HF-RADAR NETWORK. http://cordc.ucsd.edu/projects/mapping/documents/HFRNet_Radial_NetCDF.pdf');
+        netcdf.putAtt(ncid, varid_global, 'references', 'High Frequency Radar European common data and metadata model Reference Card: all you need to know about High Frequency Radar (HFR) data harmonization at a glance. http://www.marineinsitu.eu/wp-content/uploads/2018/02/HFR_Data_Model_Reference_Card_v1.pdf');
         netcdf.putAtt(ncid, varid_global, 'software_name', 'HFR_Combiner');
         netcdf.putAtt(ncid, varid_global, 'software_version', 'v3.1');
         netcdf.putAtt(ncid, varid_global, 'date_issued', dateCreated);
-        
+
         % Globals sourced from radial file metadata
         if (exist('UUID', 'var') == 0)
             UUID = '';

@@ -1027,7 +1027,7 @@ if (T2C_err == 0)
         ncwriteatt(ncfile,'/','date_issued',char(dateCreated));
         ncwriteatt(ncfile,'/','software_name',char('HFR_Combiner'));
         ncwriteatt(ncfile,'/','software_version',char('v3.1'));
-        ncwriteatt(ncfile,'/','references',char('HFR_Progs Matlab Documentation - Copyright (C) 2006-7 David M. Kaplan; Otero,M. (2008).NETCDF DESCRIPTION FOR NEAR REAL-TIME SURFACE CURRENTS PRODUCED BY THE HF-RADAR NETWORK. https://cordc.ucsd.edu/projects/mapping/documents/HFRNet_RTV-NetCDF.pdf'));
+        ncwriteatt(ncfile,'/','references',char('High Frequency Radar European common data and metadata model Reference Card: all you need to know about High Frequency Radar (HFR) data harmonization at a glance. http://www.marineinsitu.eu/wp-content/uploads/2018/02/HFR_Data_Model_Reference_Card_v1.pdf'));
         
     catch err
         display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
