@@ -67,7 +67,7 @@ while(kk>0)
     
     % Set and exectute the query
     try
-        HFRPusername_selectquery = ['SELECT network_id FROM account_tb WHERE username = ' '''' HFRPusername ''''];
+        HFRPusername_selectquery = ['SELECT network_id FROM account_tb WHERE username = ' '''' HFRPusername ''' '];
         HFRPusername_curs = exec(conn,HFRPusername_selectquery);
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
@@ -116,7 +116,7 @@ while(kk>0)
         for HFRPntw_idx=1:length(HFRPnetworks)-1
             network_selectquery = [network_selectquery HFRPnetworks{HFRPntw_idx} ''' OR network_id = ' ''''];
         end
-        network_selectquery = [network_selectquery HFRPnetworks{length(HFRPnetworks)} ''''];
+        network_selectquery = [network_selectquery HFRPnetworks{length(HFRPnetworks)} ''' AND EU_HFR_processing_flag=0'];
         network_curs = exec(conn,network_selectquery);
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
