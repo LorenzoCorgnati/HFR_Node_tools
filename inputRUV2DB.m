@@ -12,31 +12,9 @@
 
 warning('off', 'all');
 
-clear all
-close all
-clc
-
-% Setup JBDC driver for MySQL
-javaaddpath('/Users/reverendo/Toolboxes/mysql-connector-java-5.1.17.jar');
-
 iRDB_err = 0;
 
 disp(['[' datestr(now) '] - - ' 'inputRUV2DB started.']);
-
-%%
-
-%% Set HFR provider username
-
-HFRPusername = 'lorenzo';
-
-%%
-
-%% Set database parameters
-
-sqlConfig.user = 'HFR_lorenzo';
-sqlConfig.password = 'xWeLXHFQfvpBmDYO';
-sqlConfig.host = '150.145.136.8';
-sqlConfig.database = 'HFR_node_db';
 
 %%
 
