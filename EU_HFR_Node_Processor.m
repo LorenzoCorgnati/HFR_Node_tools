@@ -50,11 +50,11 @@ sqlConfig.database = 'HFR_node_db';
 kk = 5;
 while(kk>0)
     % RADIALS COMBINATION & RADIALS AND TOTALS CONVERSION
-    inputRUV2DB;
-    inputCradAscii2DB;
-    HFRCombiner;
+     inputRUV2DB;
+     inputCradAscii2DB;
+     HFRCombiner;
     
-    % RADIALS COMBINATION & RADIALS AND TOTALS CONVERSION
+    % TOTALS CONVERSION
     inputTUV2DB;
     inputCurAsc2DB;
     TotalConversion;
