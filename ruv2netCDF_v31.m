@@ -206,6 +206,9 @@ try
         if (strcmp(splitLine{1}, '%RangeResolutionKMeters:'))
             RangeResolutionKMeters = str2double(splitLine{2});
         end
+        if (strcmp(splitLine{1}, '%RangeResolutionMeters:'))
+            RangeResolutionMeters = str2double(splitLine{2});
+        end
         if(strcmp(splitLine{1}, '%AngularResolution:'))
             AngularResolution = str2double(splitLine{2});
         end
@@ -223,6 +226,9 @@ try
         end
         if(strcmp(splitLine{1}, '%RangeResolutionKMeters:'))
             RangeResolutionKMeters_str = strrep(radHeader{head_idx}(length('%RangeResolutionKMeters:')+2:length(radHeader{head_idx})), '"', '');
+        end
+        if(strcmp(splitLine{1}, '%RangeResolutionMeters:'))
+            RangeResolutionMeters_str = strrep(radHeader{head_idx}(length('%RangeResolutionMeters:')+2:length(radHeader{head_idx})), '"', '');
         end
         if(strcmp(splitLine{1}, '%AntennaBearing:'))
             AntennaBearing = strrep(radHeader{head_idx}(length('%AntennaBearing:')+2:length(radHeader{head_idx})), '"', '');
@@ -378,9 +384,17 @@ try
     % all radial files with the same range dimension. It's crucial for the
     % THREDDS time aggregation.
     number_of_range_cellsIndex = find(not(cellfun('isempty', strfind(stationFields, 'number_of_range_cells'))));
-    range_dim = 0:RangeResolutionKMeters:stationData{number_of_range_cellsIndex};
+    if(exist('RangeResolutionKMeters','var') ~= 0)
+        range_dim = 0:RangeResolutionKMeters:stationData{number_of_range_cellsIndex};
+    elseif(exist('RangeResolutionMeters','var') ~= 0)
+        range_dim = 0:RangeResolutionMeters*0.001:stationData{number_of_range_cellsIndex};
+    end
     
-    bearing_dim = 0:AngularResolution:360;
+    if(exist('AngularResolution','var') ~= 0)
+        bearing_dim = 0:AngularResolution:360;
+    else
+        bearing_dim = 0:5:360;
+    end
     
     [bearing, range] = meshgrid(bearing_dim, range_dim);
     
@@ -1445,6 +1459,11 @@ try
         RangeResolutionKMeters_str = '';
     end
     netcdf.putAtt(ncid, varid_global, 'RangeResolutionKMeters', RangeResolutionKMeters_str);
+    
+    if (exist('RangeResolutionMeters_str', 'var') == 0)
+        RangeResolutionMeters_str = '';
+    end
+    netcdf.putAtt(ncid, varid_global, 'RangeResolutionMeters', RangeResolutionMeters_str);
     
     if (exist('AntennaBearing', 'var') == 0)
         AntennaBearing = '';

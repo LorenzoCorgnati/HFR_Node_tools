@@ -33,11 +33,11 @@ disp(['[' datestr(now) '] - - ' 'EU_HFR_Node_Processor started.']);
 
 %% Set HFR provider username
 
-HFRPusername = 'lorenzo';
+HFRPusername = 'Silvia';
 
 %%
 
-%% Set database parameters
+%% Set database parameters NOT TO BE CHANGED
 
 sqlConfig.user = 'HFR_lorenzo';
 sqlConfig.password = 'xWeLXHFQfvpBmDYO';
@@ -50,14 +50,14 @@ sqlConfig.database = 'HFR_node_db';
 kk = 5;
 while(kk>0)
     % RADIALS COMBINATION & RADIALS AND TOTALS CONVERSION
-     inputRUV2DB;
-     inputCradAscii2DB;
+%      inputRUV2DB;
+%      inputCradAscii2DB;
      HFRCombiner;
     
     % TOTALS CONVERSION
-    inputTUV2DB;
-    inputCurAsc2DB;
-    TotalConversion;
+%     inputTUV2DB;
+%     inputCurAsc2DB;
+%     TotalConversion;
     
     disp(['[' datestr(now) '] - - ' 'EU_HFR_Node_Processor loop ended.']);
 end
