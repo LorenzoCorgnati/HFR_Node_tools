@@ -1,12 +1,14 @@
 %% OFFLINE_EU_HFR_Node_Processor.m
-% This wrapper launches in OFFLINE MODE the scripts for inserting into the HFR database 
-% the information about radial and totala files (both Codar and WERA) and
+% This wrapper launches in OFFLINE MODE the scripts for inserting into the HFR database
+% the information about radial and total files (both Codar and WERA) and
 % for combining radials into totals and converting radials and totals to
 % netCDF files according to the European standard data model.
 
 % The offline mode forces the value of the NRT_processed_flag in the
 % radial_input_tb and total_input_tb to 0 in order to allow repeated
 % processing of the same datasets.
+
+% No infinite loop is active.
 
 % Author: Lorenzo Corgnati
 % Date: October 26, 2018
@@ -154,20 +156,16 @@ end
 
 %%
 
-%%
+%% Processing
 
-% Set the infinite loop for continuous operation
-kk = 5;
-while(kk>0)
-    % RADIALS COMBINATION & RADIALS AND TOTALS CONVERSION
+% RADIALS COMBINATION & RADIALS AND TOTALS CONVERSION
 %      inputRUV2DB;
 %      inputCradAscii2DB;
-     HFRCombiner;
-    
-    % TOTALS CONVERSION
+HFRCombiner;
+
+% TOTALS CONVERSION
 %     inputTUV2DB;
 %     inputCurAsc2DB;
 %     TotalConversion;
-    
-    disp(['[' datestr(now) '] - - ' 'EU_HFR_Node_Processor loop ended.']);
-end
+
+disp(['[' datestr(now) '] - - ' 'OFFLINE_EU_HFR_Node_Processor run ended.']);
