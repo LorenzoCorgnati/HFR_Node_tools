@@ -20,7 +20,7 @@ General information for the tables network_tb and station_tb are loaded onto the
 
 All generated radial and total netCDF files are quality controlled according the the QC tests defined as standard for the European HFR node and for the data distribution on CMEMS-INSTAC and SeaDataNet platforms.
 
-The whole workflow is intended to run automatically to continuously convert and combine near real time HFR data produced by data providers. The wrapper EU_HFR_Node_Processor.m sets the provider username and lauches the input and processing applications within an infinite loop.
+The whole workflow is intended to run automatically to continuously convert and combine near real time HFR data produced by data providers. The wrapper EU_HFR_Node_Processor.m sets the provider username and launches the input and processing applications within an infinite loop.
 
 The applications inputRUV2DB.m and inputCradAScii2DB.m load radial files information onto the database in table radial_input_tb.
 
