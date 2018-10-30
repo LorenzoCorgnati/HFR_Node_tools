@@ -25,7 +25,7 @@ network_tbUpdateFlag = 0;
 
 try
     startDate = startCombinationDate(now);
-    startDate = '2014-12-31';
+%     startDate = '2014-12-31';
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     HFRC_err = 1;

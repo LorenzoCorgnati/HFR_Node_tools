@@ -84,7 +84,12 @@ refmax = 1;
 
 %% Set the input files
 
-rfile = HFRP_RUV.FileName{1,1};
+try
+    rfile = HFRP_RUV.FileName{1,1};
+catch err
+    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+    R2C_err = 1;
+end
 
 %%
 
@@ -132,35 +137,46 @@ end
 %%
 
 %% Set naming authority
-institution_websiteIndex = find(not(cellfun('isempty', strfind(networkFields, 'institution_website'))));
-institution_websiteStr = networkData{institution_websiteIndex};
-tmpStr = strrep(institution_websiteStr,'http://','');
-tmpStr = strrep(tmpStr,'www.','');
-tmpStr = strrep(tmpStr,'/','');
-splitStr = strsplit(tmpStr,'.');
-naming_authorityStr = [];
-for split_idx=length(splitStr):-1:1
-    naming_authorityStr = [naming_authorityStr splitStr{split_idx}];
-    if(split_idx~=1)
-        naming_authorityStr = [naming_authorityStr '.'];
+
+try
+    institution_websiteIndex = find(not(cellfun('isempty', strfind(networkFields, 'institution_website'))));
+    institution_websiteStr = networkData{institution_websiteIndex};
+    tmpStr = strrep(institution_websiteStr,'http://','');
+    tmpStr = strrep(tmpStr,'www.','');
+    tmpStr = strrep(tmpStr,'/','');
+    splitStr = strsplit(tmpStr,'.');
+    naming_authorityStr = [];
+    for split_idx=length(splitStr):-1:1
+        naming_authorityStr = [naming_authorityStr splitStr{split_idx}];
+        if(split_idx~=1)
+            naming_authorityStr = [naming_authorityStr '.'];
+        end
     end
+    naming_authorityStr= naming_authorityStr(~isspace(naming_authorityStr));
+catch err
+    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+    R2C_err = 1;
 end
-naming_authorityStr= naming_authorityStr(~isspace(naming_authorityStr));
 
 %%
 
 %% Define EDIOS and EDMO codes, site code, platform code, id and metadata resources
 
-EDIOS_Series_ID = networkData{network_idIndex};
-EDIOS_Platform_ID = siteCode;
-EDMO_codeIndex = find(not(cellfun('isempty', strfind(networkFields, 'EDMO_code'))));
-EDMO_code = networkData{EDMO_codeIndex};
-site_code = EDIOS_Series_ID;
-platform_code = [EDIOS_Series_ID '_' EDIOS_Platform_ID];
-id = [EDIOS_Series_ID '_' EDIOS_Platform_ID '_' datestr(HFRP_RUV.TimeStamp, 'yyyy-mm-dd') 'T' datestr(HFRP_RUV.TimeStamp, 'HH:MM:SS') 'Z'];
-metadata_pageIndex = find(not(cellfun('isempty', strfind(networkFields, 'metadata_page'))));
-TDS_catalog = networkData{metadata_pageIndex};
-xlink = ['<sdn_reference xlink:href="' TDS_catalog '" xlink:role="" xlink:type="URL"/>'];
+try
+    EDIOS_Series_ID = networkData{network_idIndex};
+    EDIOS_Platform_ID = siteCode;
+    EDMO_codeIndex = find(not(cellfun('isempty', strfind(networkFields, 'EDMO_code'))));
+    EDMO_code = networkData{EDMO_codeIndex};
+    site_code = EDIOS_Series_ID;
+    platform_code = [EDIOS_Series_ID '_' EDIOS_Platform_ID];
+    id = [EDIOS_Series_ID '_' EDIOS_Platform_ID '_' datestr(HFRP_RUV.TimeStamp, 'yyyy-mm-dd') 'T' datestr(HFRP_RUV.TimeStamp, 'HH:MM:SS') 'Z'];
+    metadata_pageIndex = find(not(cellfun('isempty', strfind(networkFields, 'metadata_page'))));
+    TDS_catalog = networkData{metadata_pageIndex};
+    xlink = ['<sdn_reference xlink:href="' TDS_catalog '" xlink:role="" xlink:type="URL"/>'];
+catch err
+    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+    R2C_err = 1;
+end
 
 %%
 
@@ -616,26 +632,39 @@ end
 %%
 
 %% Set the time, position and depth quality flags
-% Time quality flag
-sdnTime_QCflag = 1;
-% Position quality flag
-sdnPosition_QCflag = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(size(velu,1),size(velu,2),1));
-sdnPosition_QCflag(velu~=netcdf.getConstant('NC_FILL_FLOAT')) = 1;
 
-% Depth quality flag
-sdnDepth_QCflag = 1;
+try
+    % Time quality flag
+    sdnTime_QCflag = 1;
+    % Position quality flag
+    sdnPosition_QCflag = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(size(velu,1),size(velu,2),1));
+    sdnPosition_QCflag(velu~=netcdf.getConstant('NC_FILL_FLOAT')) = 1;
+    
+    % Depth quality flag
+    sdnDepth_QCflag = 1;
+catch err
+    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+    R2C_err = 1;
+end
 
 %%
 
 %% Populate site latitude, site longitude and site code variables
-siteLat = Origin(1);
-siteLon = Origin(2);
-numSites = 1;
-siteLat((length(siteLat)+1):maxsite) = netcdf.getConstant('NC_FILL_FLOAT');
-siteLon((length(siteLon)+1):maxsite) = netcdf.getConstant('NC_FILL_FLOAT');
-siteCodeArr(1,:) = siteCode;
-for sC_idx=2:maxsite
-    siteCodeArr(sC_idx,:) = '    ';
+
+try
+    siteLat = Origin(1);
+    siteLon = Origin(2);
+    numSites = 1;
+    siteLat((length(siteLat)+1):maxsite) = netcdf.getConstant('NC_FILL_FLOAT');
+    siteLon((length(siteLon)+1):maxsite) = netcdf.getConstant('NC_FILL_FLOAT');
+%     siteCodeArr(1,:) = siteCode;
+    siteCodeArr = siteCode;
+    for sC_idx=size(siteCode,1)+1:maxsite
+        siteCodeArr(sC_idx,:) = blanks(size(siteCode,2));
+    end
+catch err
+    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+    R2C_err = 1;
 end
 
 %%
