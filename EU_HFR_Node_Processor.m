@@ -33,7 +33,7 @@ disp(['[' datestr(now) '] - - ' 'EU_HFR_Node_Processor started.']);
 
 %% Set HFR provider username
 
-HFRPusername = 'Silvia';
+HFRPusername = 'lorenzo';
 
 %%
 
@@ -50,7 +50,7 @@ sqlConfig.database = 'HFR_node_db';
 kk = 5;
 while(kk>0)
     % RADIALS COMBINATION & RADIALS AND TOTALS CONVERSION
-%      inputRUV2DB;
+     inputRUV2DB;
 %      inputCradAscii2DB;
      HFRCombiner;
     
