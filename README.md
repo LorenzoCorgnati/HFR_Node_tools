@@ -37,12 +37,13 @@ The required toolboxes are:
 - GSHHS (http://www.ngdc.noaa.gov/mgg/shorelines/data/gshhs/); 
 - Nctoolbox-1.1.3 (https://github.com/nctoolbox/nctoolbox); 
 - mysql-connector-java-5.1.17 driver (https://mvnrepository.com/artifact/mysql/mysql-connector-java/5.1.17); 
-- Rdir (http://www.mathworks.com/matlabcentral/fileexchange/19550-recursive-directory-listing).
+- Rdir (http://www.mathworks.com/matlabcentral/fileexchange/19550-recursive-directory-listing);
+- uniqueStrCell (https://www.mathworks.com/matlabcentral/fileexchange/50476-unique-for-cell-array-of-string).
 
 
 Author: Lorenzo Corgnati
 
-Date: October 17, 2018
+Date: November 20, 2018
 
 E-mail: lorenzo.corgnati@sp.ismar.cnr.it
 
