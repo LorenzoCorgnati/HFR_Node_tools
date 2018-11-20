@@ -13,7 +13,7 @@ warning('off', 'all');
 
 TC_err = 0;
 
-disp(['[' datestr(now) '] - - ' 'TotalConversion_main started.']);
+disp(['[' datestr(now) '] - - ' 'TotalConversion started.']);
 
 %%
 
@@ -42,7 +42,7 @@ catch err
     TC_err = 1;
 end
 if(TC_err==0)
-    disp(['[' datestr(now) '] - - ' 'Query to account_tb table successfully executed.']);
+    disp(['[' datestr(now) '] - - ' 'Query to account_tb table for retrieving the networks managed by the HFR provider username successfully executed.']);
 end
 
 % Fetch data
@@ -54,7 +54,7 @@ catch err
     TC_err = 1;
 end
 if(TC_err==0)
-    disp(['[' datestr(now) '] - - ' 'Data from account_tb table successfully fetched.']);
+    disp(['[' datestr(now) '] - - ' 'Data of the networks managed by the HFR provider username successfully fetched from account_tb table.']);
 end
 
 % Close cursor
@@ -96,7 +96,7 @@ catch err
     TC_err = 1;
 end
 if(TC_err==0)
-    disp(['[' datestr(now) '] - - ' 'Query to network_tb table successfully executed.']);
+    disp(['[' datestr(now) '] - - ' 'Query to network_tb table for retrieving data of the managed networks successfully executed.']);
 end
 
 % Fetch data
@@ -108,7 +108,7 @@ catch err
     TC_err = 1;
 end
 if(TC_err==0)
-    disp(['[' datestr(now) '] - - ' 'Data from network_tb table successfully fetched.']);
+    disp(['[' datestr(now) '] - - ' 'Data of the managed networks successfully fetched from network_tb table.']);
 end
 
 % Retrieve column names
@@ -130,7 +130,7 @@ catch err
     TC_err = 1;
 end
 if(TC_err==0)
-    disp(['[' datestr(now) '] - - ' 'Number of networks from network_tb table successfully retrieved.']);
+    disp(['[' datestr(now) '] - - ' 'Number of managed networks successfully retrieved from network_tb table.']);
 end
 
 % Close cursor
@@ -164,15 +164,73 @@ end
 % Scan the networks
 try
     for network_idx=1:numNetworks
+        % Retrieve information on the stations belonging to the current network
         try
-            toBeConvertedTotals_selectquery = ['SELECT * FROM total_input_tb WHERE network_id = ' '''' network_data{network_idx,network_idIndex} ''' AND NRT_processed_flag = 0'];
+            station_selectquery = ['SELECT * FROM station_tb WHERE network_id = ' '''' network_data{network_idx,network_idIndex} ''''];
+            station_curs = exec(conn,station_selectquery);
+        catch err
+            disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+            TC_err = 1;
+        end
+        if(TC_err==0)
+            disp(['[' datestr(now) '] - - ' 'Query to station_tb table for retrieving the stations of the ' network_data{network_idx,network_idIndex} ' network successfully executed.']);
+        end
+        
+        % Fetch data
+        try
+            station_curs = fetch(station_curs);
+            station_data = station_curs.Data;
+        catch err
+            disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+            TC_err = 1;
+        end
+        if(TC_err==0)
+            disp(['[' datestr(now) '] - - ' 'Data of the stations of the ' network_data{network_idx,network_idIndex} ' network successfully fetched from station_tb table.']);
+        end
+        
+        % Retrieve column names
+        try
+            station_columnNames = columnnames(station_curs,true);
+        catch err
+            disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+            TC_err = 1;
+        end
+        if(TC_err==0)
+            disp(['[' datestr(now) '] - - ' 'Column names from station_tb table successfully retrieved.']);
+        end
+        
+        % Retrieve the number of stations belonging to the current network
+        try
+            numStations = rows(station_curs);
+        catch err
+            disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+            TC_err = 1;
+        end
+        if(TC_err==0)
+            disp(['[' datestr(now) '] - - ' 'Number of stations belonging to the ' network_data{network_idx,network_idIndex} ' network successfully retrieved from station_tb table.']);
+        end
+        
+        % Close cursor to station_tb table
+        try
+            close(station_curs);
+        catch err
+            disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+            TC_err = 1;
+        end
+        if(TC_err==0)
+            disp(['[' datestr(now) '] - - ' 'Cursor to station_tb table successfully closed.']);
+        end
+        
+        % Retrieve the total files to be converted
+        try
+            toBeConvertedTotals_selectquery = ['SELECT * FROM total_input_tb WHERE datetime>' '''' startDate ''' AND network_id = ' '''' network_data{network_idx,network_idIndex} ''' AND NRT_processed_flag = 0'];
             toBeConvertedTotals_curs = exec(conn,toBeConvertedTotals_selectquery);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             TC_err = 1;
         end
         if(TC_err==0)
-            disp(['[' datestr(now) '] - - ' 'Query to total_input_tb table successfully executed.']);
+            disp(['[' datestr(now) '] - - ' 'Query to total_input_tb table for retrieving the total files from ' network_data{network_idx,network_idIndex} ' network to be converted successfully executed.']);
         end
         
         % Fetch data
@@ -184,7 +242,7 @@ try
             TC_err = 1;
         end
         if(TC_err==0)
-            disp(['[' datestr(now) '] - - ' 'Data from total_input_tb table successfully fetched.']);
+            disp(['[' datestr(now) '] - - ' 'Data of the total files from ' network_data{network_idx,network_idIndex} ' network to be converted successfully fetched from total_input_tb table.']);
         end
         
         % Retrieve column names
@@ -206,7 +264,7 @@ try
             TC_err = 1;
         end
         if(TC_err==0)
-            disp(['[' datestr(now) '] - - ' 'Number of totals to be converted per the current network from total_input_tb table successfully retrieved.']);
+            disp(['[' datestr(now) '] - - ' 'Number of total files from ' network_data{network_idx,network_idIndex} ' network to be converted successfully retrieved from total_input_tb table.']);
         end
         
         % Close cursor to total_input_tb table
@@ -242,16 +300,16 @@ try
             try
                 [yMDF_err,yearFolder,monthFolder,dayFolder] = yearMonthDayFolder(toBeConvertedTotals_data{toBeConverted_idx,timestampIndex});
                 if (strcmp(toBeConvertedTotals_data{toBeConverted_idx,extensionIndex}, 'tuv')) % Codar data
-                    [TC_err, network_data(network_idx,:), outputFilename,outputFilesize] = tuv2netCDF_v31([network_data{network_idx,inputPathIndex} filesep dayFolder filesep toBeConvertedTotals_data{toBeConverted_idx,filenameIndex}],toBeConvertedTotals_data{toBeConverted_idx,timestampIndex},network_data(network_idx,:),network_columnNames);
+                    [TC_err, network_data(network_idx,:), outputFilename, outputFilesize] = tuv2netCDF_v31([network_data{network_idx,inputPathIndex} filesep dayFolder filesep toBeConvertedTotals_data{toBeConverted_idx,filenameIndex}],toBeConvertedTotals_data{toBeConverted_idx,timestampIndex},network_data(network_idx,:),network_columnNames,station_data,station_columnNames);
                 elseif (strcmp(toBeConvertedTotals_data{toBeConverted_idx,extensionIndex}, 'cur_asc')) % WERA data
-                    [TC_err, network_data(network_idx,:), outputFilename,outputFilesize] = curAsc2netCDF_v31([network_data{network_idx,inputPathIndex} filesep dayFolder filesep toBeConvertedTotals_data{toBeConverted_idx,filenameIndex}],toBeConvertedTotals_data{toBeConverted_idx,timestampIndex},network_data(network_idx,:),network_columnNames);
+                    [TC_err, network_data(network_idx,:), outputFilename, outputFilesize] = curAsc2netCDF_v31([network_data{network_idx,inputPathIndex} filesep dayFolder filesep toBeConvertedTotals_data{toBeConverted_idx,filenameIndex}],toBeConvertedTotals_data{toBeConverted_idx,timestampIndex},network_data(network_idx,:),network_columnNames,station_data,station_columnNames);
                 end
             catch err
                 disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                 TC_err = 1;
             end
             if(TC_err==0)
-                disp(['[' datestr(now) '] - - ' 'File ' toBeConvertedTotals_data{toBeConverted_idx,filenameIndex} ' successfully converted.']);
+                disp(['[' datestr(now) '] - - ' outputFilename ' total netCDF v2.1 file successfully created and stored.']);
             end
             
             % Update NRT_processed_flag in total_input_tb table
@@ -273,29 +331,35 @@ try
                 TC_err = 1;
             end
             if(TC_err==0)
-                disp(['[' datestr(now) '] - - ' 'total_input_tb table successfully updated with NRT processed flag.']);
+                disp(['[' datestr(now) '] - - ' 'total_input_tb table successfully updated with NRT processed flag for timestamp ' toBeConvertedTotals_data{toBeConverted_idx,timestampIndex} '.']);
             end
             
             % Insert converted total info in total_HFRnetCDF_tb table
             try
-                % Evaluate datetime from, Time Stamp
-                [t2d_err,DateTime] = timestamp2datetime(toBeConvertedTotals_data{toBeConverted_idx,timestampIndex});
-                
-                % Define a cell array containing the column names to be added
-                addColnames = {'filename' 'network_id' 'timestamp' 'datetime' 'filesize' 'input_filename' 'check_flag'};
-                
-                % Define a cell array that contains the data for insertion
-                addData = {outputFilename,network_data{network_idx,network_idIndex},toBeConvertedTotals_data{toBeConverted_idx,timestampIndex},DateTime,outputFilesize,toBeConvertedTotals_data{toBeConverted_idx,filenameIndex},0};
-                
-                % Append the product data into the total_HFRnetCDF_tb table on the database.
-                tablename = 'total_HFRnetCDF_tb';
-                datainsert(conn,tablename,addColnames,addData);
+                if(exist('outputFilename','var') ~= 0)
+                    % Delete the eventually present entry with the same name from the database
+                    total_deletequery = ['DELETE FROM total_HFRnetCDF_tb WHERE filename = ' '''' outputFilename ''''];
+                    total_deletecurs = exec(conn,total_deletequery);
+                    
+                    % Evaluate datetime from Time Stamp
+                    [t2d_err,DateTime] = timestamp2datetime(toBeConvertedTotals_data{toBeConverted_idx,timestampIndex});
+                    
+                    % Define a cell array containing the column names to be added
+                    addColnames = {'filename' 'network_id' 'timestamp' 'datetime' 'creation_date' 'filesize' 'input_filename' 'check_flag'};
+                    
+                    % Define a cell array that contains the data for insertion
+                    addData = {outputFilename,network_data{network_idx,network_idIndex},toBeConvertedTotals_data{toBeConverted_idx,timestampIndex},DateTime,(datestr(now,'yyyy-mm-dd HH:MM:SS')),outputFilesize,toBeConvertedTotals_data{toBeConverted_idx,filenameIndex},0};
+                    
+                    % Append the product data into the total_HFRnetCDF_tb table on the database.
+                    tablename = 'total_HFRnetCDF_tb';
+                    datainsert(conn,tablename,addColnames,addData);
+                end
             catch err
                 disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                 TC_err = 1;
             end
             if(TC_err==0)
-                disp(['[' datestr(now) '] - - ' 'Total converted file information successfully inserted into total_HFRnetCDF_tb table.']);
+                disp(['[' datestr(now) '] - - ' outputFilename 'total file information successfully inserted into total_HFRnetCDF_tb table.']);
             end
         end
     end
@@ -319,6 +383,8 @@ if(TC_err==0)
 end
 
 %%
+
+disp(['[' datestr(now) '] - - ' 'TotalConversion successfully executed.']);
 
 % pause(2700);
 pause(10);

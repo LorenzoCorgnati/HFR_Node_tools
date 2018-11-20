@@ -43,6 +43,12 @@ HFRPusername = 'lorenzo';
 
 %%
 
+%% Set datetime of the starting date of the processing period
+
+startDate = '2014-12-31';
+
+%%
+
 %% Set database parameters NOT TO BE CHANGED
 
 sqlConfig.user = 'HFR_lorenzo';
