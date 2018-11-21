@@ -70,7 +70,7 @@ while(kk>0)
     
     % TOTALS CONVERSION
 %     inputTUV2DB;
-%     inputCurAsc2DB;
+    inputCurAsc2DB;
     TotalConversion;
     
     disp(['[' datestr(now) '] - - ' 'EU_HFR_Node_Processor loop ended.']);

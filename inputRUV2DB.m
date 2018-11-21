@@ -232,6 +232,8 @@ try
         % Scan the stations
         for station_idx=1:numStations
             if(~isempty(station_data{station_idx,inputPathIndex}))
+                % Trim heading and trailing whitespaces from folder path
+                station_data{station_idx,inputPathIndex} = strtrim(station_data{station_idx,inputPathIndex});
                 % List the input ruv files for the current station
                 try
                     ruvFiles = rdir([station_data{station_idx,inputPathIndex} filesep '**' filesep '*.ruv'],'datenum>floor(startDate)');
