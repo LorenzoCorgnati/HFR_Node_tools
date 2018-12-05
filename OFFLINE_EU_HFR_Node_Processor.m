@@ -43,18 +43,24 @@ HFRPusername = 'lorenzo';
 
 %%
 
-%% Set datetime of the starting date of the processing period
-
-startDate = '2014-12-31';
-
-%%
-
 %% Set database parameters NOT TO BE CHANGED
 
 sqlConfig.user = 'HFR_lorenzo';
 sqlConfig.password = 'xWeLXHFQfvpBmDYO';
 sqlConfig.host = '150.145.136.8';
 sqlConfig.database = 'HFR_node_db';
+
+%%
+
+%% Set datetime of the starting date of the processing period
+
+try
+    startDate = startCombinationDate(now);
+    startDate = '2012-12-31';
+catch err
+    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+    HFRC_err = 1;
+end
 
 %%
 
