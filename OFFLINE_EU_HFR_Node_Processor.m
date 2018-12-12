@@ -39,7 +39,8 @@ disp(['[' datestr(now) '] - - ' 'EU_HFR_Node_Processor started.']);
 
 %% Set HFR provider username
 
-HFRPusername = 'lorenzo';
+% HFRPusername = 'lorenzo';
+HFRPusername = 'hfr_ibiz';
 
 %%
 
@@ -56,7 +57,7 @@ sqlConfig.database = 'HFR_node_db';
 
 try
     startDate = startCombinationDate(now);
-    startDate = '2012-12-31';
+    startDate = '2018-12-05';
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     HFRC_err = 1;

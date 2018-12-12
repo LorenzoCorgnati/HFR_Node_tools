@@ -352,6 +352,10 @@ try
             filenameIndexC = strfind(toBeCombinedRadials_columnNames, 'filename');
             filenameIndex = find(not(cellfun('isempty', filenameIndexC)));
             
+            % Find the index of the filepath field
+            filepathIndexC = strfind(toBeCombinedRadials_columnNames, 'filepath');
+            filepathIndex = find(not(cellfun('isempty', filepathIndexC)));
+            
             % Find the index of the station_id field in the radial_input_tb table
             RIstation_idIndexC = strfind(toBeCombinedRadials_columnNames, 'station_id');
             RIstation_idIndex = find(not(cellfun('isempty', RIstation_idIndexC)));
@@ -374,15 +378,13 @@ try
                     % Find the indices of the radial files of the current timestamp to be combined
                     toBeCombinedRadialIndicesC = strfind(toBeCombinedRadials_data(:,timeStampIndex), toBeCombinedRadials_data{radial_idx,timeStampIndex});
                     toBeCombinedRadialIndices = find(not(cellfun('isempty', toBeCombinedRadialIndicesC)));
-                    % Build the path string according to the folder structure
-                    [yMDF_err,yearFolder,monthFolder,dayFolder] = yearMonthDayFolder(toBeCombinedRadials_data{radial_idx,timeStampIndex});
                     try
                         % Build the radial file paths
                         for indices_idx=1:length(toBeCombinedRadialIndices)
                             toBeCombinedStationIndexC = strfind(station_data(:,STstation_idIndex), toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),RIstation_idIndex});
                             toBeCombinedStationIndex = find(not(cellfun('isempty', toBeCombinedStationIndexC)));
                             station_data{toBeCombinedStationIndex,inputPathIndex} = strtrim(station_data{toBeCombinedStationIndex,inputPathIndex});
-                            radFiles(indices_idx) = {[station_data{toBeCombinedStationIndex,inputPathIndex} filesep dayFolder filesep toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),filenameIndex}]};
+                            radFiles(indices_idx) = {[toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),filepathIndex} filesep toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),filenameIndex}]};
                         end
                     catch err
                         display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
@@ -410,7 +412,7 @@ try
                             if (strcmp(toBeCombinedRadials_data{toBeCombinedStationIndex,extensionIndex}, 'ruv')) % Codar data
                                 [R2C_err,network_data(network_idx,:),station_data(toBeCombinedStationIndex,:),radOutputFilename,radOutputFilesize,station_tbUpdateFlag] = ruv2netCDF_v31(RADIAL(ruv_idx),network_data(network_idx,:),network_columnNames,station_data(toBeCombinedStationIndex,:),station_columnNames,toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),timeStampIndex});
                                 % LINES BELOW TO BE COMMENTED WHEN THE WERA FILE CONVERTER IS RUNNING
-                                disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1 file successfully created and stored.']);
+%                                 disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1 file successfully created and stored.']);
                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
                             elseif (strcmp(toBeCombinedRadials_data{toBeCombinedStationIndex,extensionIndex}, 'crad_ascii')) % WERA data
                                 % TO BE DONE
@@ -421,6 +423,9 @@ try
                         catch err
                             display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                             HFRC_err = 1;
+                        end
+                        if (HFRC_err == 0)
+                            disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1 file successfully created and stored.']);
                         end
                         % Insert radial info in radial_HFRnetCDF_tb table
                         try
