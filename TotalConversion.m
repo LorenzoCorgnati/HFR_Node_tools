@@ -389,5 +389,4 @@ end
 
 disp(['[' datestr(now) '] - - ' 'TotalConversion successfully executed.']);
 
-% pause(2700);
-pause(10);
+pause(1200);
