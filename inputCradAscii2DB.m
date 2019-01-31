@@ -16,6 +16,8 @@ iCradDB_err = 0;
 
 disp(['[' datestr(now) '] - - ' 'inputCradAscii2DB started.']);
 
+startDateNum = datenum(startDate);
+
 %%
 
 %% Connect to database
@@ -86,11 +88,11 @@ end
 
 % Set and exectute the query
 try
-    network_selectquery = 'SELECT * FROM network_tb WHERE network_id = ''';
+    network_selectquery = 'SELECT * FROM network_tb WHERE (network_id = ''';
     for HFRPntw_idx=1:length(HFRPnetworks)-1
         network_selectquery = [network_selectquery HFRPnetworks{HFRPntw_idx} ''' OR network_id = ' ''''];
     end
-    network_selectquery = [network_selectquery HFRPnetworks{length(HFRPnetworks)} ''' AND EU_HFR_processing_flag=0'];
+    network_selectquery = [network_selectquery HFRPnetworks{length(HFRPnetworks)} ''') AND EU_HFR_processing_flag=0'];
     network_curs = exec(conn,network_selectquery);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
@@ -237,7 +239,7 @@ try
                 station_data{station_idx,inputPathIndex} = strtrim(station_data{station_idx,inputPathIndex});
                 % List the input crad_ascii files for the current station
                 try
-                    cradFiles = rdir([station_data{station_idx,inputPathIndex} filesep '**' filesep '*.crad_ascii'],'datenum>floor(now-7)');
+                    cradFiles = rdir([station_data{station_idx,inputPathIndex} filesep '**' filesep '*.crad_ascii'],'datenum>floor(startDateNum)');
                     disp(['[' datestr(now) '] - - ' 'Radial files from ' station_data{station_idx,station_idIndex} ' station successfully listed.']);
                 catch err
                     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);

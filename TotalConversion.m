@@ -85,11 +85,11 @@ end
 
 % Set and exectute the query
 try
-    network_selectquery = 'SELECT * FROM network_tb WHERE network_id = ''';
+    network_selectquery = 'SELECT * FROM network_tb WHERE (network_id = ''';
     for HFRPntw_idx=1:length(HFRPnetworks)-1
         network_selectquery = [network_selectquery HFRPnetworks{HFRPntw_idx} ''' OR network_id = ' ''''];
     end
-    network_selectquery = [network_selectquery HFRPnetworks{length(HFRPnetworks)} ''' AND EU_HFR_processing_flag=0'];
+    network_selectquery = [network_selectquery HFRPnetworks{length(HFRPnetworks)} ''') AND EU_HFR_processing_flag=0'];
     network_curs = exec(conn,network_selectquery);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
