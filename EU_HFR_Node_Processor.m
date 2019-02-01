@@ -33,9 +33,7 @@ disp(['[' datestr(now) '] - - ' 'EU_HFR_Node_Processor started.']);
 
 %% Set HFR provider username
 
-% HFRPusername = 'lorenzo';
-% HFRPusername = 'hfr_ibiz';
-HFRPusername = 'mvgarcia';
+HFRPusername = 'lorenzo';
 
 %%
 
@@ -67,7 +65,7 @@ while(kk>0)
     disp(['[' datestr(now) '] - - ' 'EU_HFR_Node_Processor loop started.']);
     % RADIALS COMBINATION & RADIALS AND TOTALS CONVERSION
     inputRUV2DB;
-%     inputCradAscii2DB;
+    inputCradAscii2DB;
     HFRCombiner;
     
     % TOTALS CONVERSION
