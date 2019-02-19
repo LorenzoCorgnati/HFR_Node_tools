@@ -24,12 +24,10 @@ startDateNum = datenum(startDate);
 
 try
     conn = database(sqlConfig.database,sqlConfig.user,sqlConfig.password,'Vendor','MySQL','Server',sqlConfig.host);
+    disp(['[' datestr(now) '] - - ' 'Connection to database successfully established.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     iCradDB_err = 1;
-end
-if(iCradDB_err==0)
-    disp(['[' datestr(now) '] - - ' 'Connection to database successfully established.']);
 end
 
 %%
@@ -40,35 +38,29 @@ end
 try
     HFRPusername_selectquery = ['SELECT network_id FROM account_tb WHERE username = ' '''' HFRPusername ''''];
     HFRPusername_curs = exec(conn,HFRPusername_selectquery);
+    disp(['[' datestr(now) '] - - ' 'Query to account_tb table for retrieving the networks managed by the HFR provider username successfully executed.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     iCradDB_err = 1;
-end
-if(iCradDB_err==0)
-    disp(['[' datestr(now) '] - - ' 'Query to account_tb table for retrieving the networks managed by the HFR provider username successfully executed.']);
 end
 
 % Fetch data
 try
     HFRPusername_curs = fetch(HFRPusername_curs);
     HFRPusername_data = HFRPusername_curs.Data;
+    disp(['[' datestr(now) '] - - ' 'Data of the networks managed by the HFR provider username successfully fetched from account_tb table.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     iCradDB_err = 1;
-end
-if(iCradDB_err==0)
-    disp(['[' datestr(now) '] - - ' 'Data of the networks managed by the HFR provider username successfully fetched from account_tb table.']);
 end
 
 % Close cursor
 try
     close(HFRPusername_curs);
+    disp(['[' datestr(now) '] - - ' 'Cursor to account_tb table successfully closed.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     iCradDB_err = 1;
-end
-if(iCradDB_err==0)
-    disp(['[' datestr(now) '] - - ' 'Cursor to account_tb table successfully closed.']);
 end
 
 %%
@@ -94,57 +86,47 @@ try
     end
     network_selectquery = [network_selectquery HFRPnetworks{length(HFRPnetworks)} ''') AND EU_HFR_processing_flag=0'];
     network_curs = exec(conn,network_selectquery);
+    disp(['[' datestr(now) '] - - ' 'Query to network_tb table for retrieving data of the managed networks successfully executed.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     iCradDB_err = 1;
-end
-if(iCradDB_err==0)
-    disp(['[' datestr(now) '] - - ' 'Query to network_tb table for retrieving data of the managed networks successfully executed.']);
 end
 
 % Fetch data
 try
     network_curs = fetch(network_curs);
     network_data = network_curs.Data;
+    disp(['[' datestr(now) '] - - ' 'Data of the managed networks successfully fetched from network_tb table.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     iCradDB_err = 1;
-end
-if(iCradDB_err==0)
-    disp(['[' datestr(now) '] - - ' 'Data of the managed networks successfully fetched from network_tb table.']);
 end
 
 % Retrieve column names
 try
     network_columnNames = columnnames(network_curs,true);
+    disp(['[' datestr(now) '] - - ' 'Column names from network_tb table successfully retrieved.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     iCradDB_err = 1;
-end
-if(iCradDB_err==0)
-    disp(['[' datestr(now) '] - - ' 'Column names from network_tb table successfully retrieved.']);
 end
 
 % Retrieve the number of networks
 try
     numNetworks = rows(network_curs);
+    disp(['[' datestr(now) '] - - ' 'Number of managed networks successfully retrieved from network_tb table.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     iCradDB_err = 1;
-end
-if(iCradDB_err==0)
-    disp(['[' datestr(now) '] - - ' 'Number of managed networks successfully retrieved from network_tb table.']);
 end
 
 % Close cursor
 try
     close(network_curs);
+    disp(['[' datestr(now) '] - - ' 'Cursor to network_tb table successfully closed.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     iCradDB_err = 1;
-end
-if(iCradDB_err==0)
-    disp(['[' datestr(now) '] - - ' 'Cursor to network_tb table successfully closed.']);
 end
 
 %%
@@ -166,59 +148,49 @@ try
         try
             station_selectquery = ['SELECT * FROM station_tb WHERE network_id = ' '''' network_data{network_idx,network_idIndex} ''''];
             station_curs = exec(conn,station_selectquery);
+            disp(['[' datestr(now) '] - - ' 'Query to station_tb table for retrieving the stations of the ' network_data{network_idx,network_idIndex} ' network successfully executed.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             iCradDB_err = 1;
         end
-        if(iCradDB_err==0)
-            disp(['[' datestr(now) '] - - ' 'Query to station_tb table for retrieving the stations of the ' network_data{network_idx,network_idIndex} ' network successfully executed.']);
-        end
-        
+                
         % Fetch data
         try
             station_curs = fetch(station_curs);
             station_data = station_curs.Data;
+            disp(['[' datestr(now) '] - - ' 'Data of the stations of the ' network_data{network_idx,network_idIndex} ' network successfully fetched from station_tb table.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             iCradDB_err = 1;
         end
-        if(iCradDB_err==0)
-            disp(['[' datestr(now) '] - - ' 'Data of the stations of the ' network_data{network_idx,network_idIndex} ' network successfully fetched from station_tb table.']);
-        end
-        
+                
         % Retrieve column names
         try
             station_columnNames = columnnames(station_curs,true);
+            disp(['[' datestr(now) '] - - ' 'Column names from station_tb table successfully retrieved.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             iCradDB_err = 1;
         end
-        if(iCradDB_err==0)
-            disp(['[' datestr(now) '] - - ' 'Column names from station_tb table successfully retrieved.']);
-        end
-        
+                
         % Retrieve the number of stations belonging to the current network
         try
             numStations = rows(station_curs);
+            disp(['[' datestr(now) '] - - ' 'Number of stations belonging to the ' network_data{network_idx,network_idIndex} ' network successfully retrieved from station_tb table.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             iCradDB_err = 1;
         end
-        if(iCradDB_err==0)
-            disp(['[' datestr(now) '] - - ' 'Number of stations belonging to the ' network_data{network_idx,network_idIndex} ' network successfully retrieved from station_tb table.']);
-        end
-        
+                
         % Close cursor to station_tb table
         try
             close(station_curs);
+            disp(['[' datestr(now) '] - - ' 'Cursor to station_tb table successfully closed.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             iCradDB_err = 1;
         end
-        if(iCradDB_err==0)
-            disp(['[' datestr(now) '] - - ' 'Cursor to station_tb table successfully closed.']);
-        end
-        
+                
         try
             % Find the index of the input file path field
             inputPathIndexC = strfind(station_columnNames, 'radial_input_folder_path');
@@ -255,24 +227,21 @@ try
                     try
                         dbRadials_selectquery = ['SELECT * FROM radial_input_tb WHERE datetime>' '''' startDate ''' AND network_id = ' '''' network_data{network_idx,network_idIndex} ''' AND filename = ' '''' noFullPathName ''' ORDER BY timestamp'];
                         dbRadials_curs = exec(conn,dbRadials_selectquery);
+                        disp(['[' datestr(now) '] - - ' 'Query to radial_input_tb table for checking if ' noFullPathName ' radial file is already present in the database successfully executed.']);
                     catch err
                         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                         iCradDB_err = 1;
                     end
-                    if(iCradDB_err==0)
-                        disp(['[' datestr(now) '] - - ' 'Query to radial_input_tb table for checking if ' noFullPathName ' radial file is already present in the database successfully executed.']);
-                    end
+                    
                     % Fetch data
                     try
                         dbRadials_curs = fetch(dbRadials_curs);
+                        disp(['[' datestr(now) '] - - ' 'Data about the presence of ' noFullPathName ' radial file in the database successfully fetched from radial_input_tb table.']);
                     catch err
                         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                         iCradDB_err = 1;
                     end
-                    if(iCradDB_err==0)
-                        disp(['[' datestr(now) '] - - ' 'Data about the presence of ' noFullPathName ' radial file in the database successfully fetched from radial_input_tb table.']);
-                    end
-                    
+                                        
                     if(rows(dbRadials_curs) == 0)
                         % Retrieve information about the crad_ascii file
                         try
@@ -334,13 +303,11 @@ try
                             % Append the product data into the radial_input_tb table on the database.
                             tablename = 'radial_input_tb';
                             datainsert(conn,tablename,addColnames,addData);
+                            disp(['[' datestr(now) '] - - ' noFullPathName ' radial file information successfully inserted into radial_input_tb table.']);
                         catch err
                             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                             iCradDB_err = 1;
-                        end
-                        if(iCradDB_err==0)
-                            disp(['[' datestr(now) '] - - ' noFullPathName ' radial file information successfully inserted into radial_input_tb table.']);
-                        end
+                        end                       
                     end
                 end
             end
@@ -357,14 +324,14 @@ end
 
 try
     close(conn);
+    disp(['[' datestr(now) '] - - ' 'Connection to database successfully closed.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     iCradDB_err = 1;
 end
-if(iCradDB_err==0)
-    disp(['[' datestr(now) '] - - ' 'Connection to database successfully closed.']);
-end
-
+    
 %%
 
-disp(['[' datestr(now) '] - - ' 'inputCradAscii2DB successfully executed.']);
+if(iCradDB_err==0)
+    disp(['[' datestr(now) '] - - ' 'inputCradAscii2DB successfully executed.']);
+end

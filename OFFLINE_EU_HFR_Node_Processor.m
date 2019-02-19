@@ -70,12 +70,10 @@ end
 % Connect to database
 try
     conn = database(sqlConfig.database,sqlConfig.user,sqlConfig.password,'Vendor','MySQL','Server',sqlConfig.host);
+    disp(['[' datestr(now) '] - - ' 'Connection to database successfully established.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     EHNP_err = 1;
-end
-if(EHNP_err==0)
-    disp(['[' datestr(now) '] - - ' 'Connection to database successfully established.']);
 end
 
 % Query the database for retrieving the networks managed by the HFR provider username
@@ -83,33 +81,29 @@ end
 try
     HFRPusername_selectquery = ['SELECT network_id FROM account_tb WHERE username = ' '''' HFRPusername ''''];
     HFRPusername_curs = exec(conn,HFRPusername_selectquery);
+    disp(['[' datestr(now) '] - - ' 'Query to account_tb table successfully executed.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     EHNP_err = 1;
 end
-if(EHNP_err==0)
-    disp(['[' datestr(now) '] - - ' 'Query to account_tb table successfully executed.']);
-end
+
 % Fetch data
 try
     HFRPusername_curs = fetch(HFRPusername_curs);
     HFRPusername_data = HFRPusername_curs.Data;
+    disp(['[' datestr(now) '] - - ' 'Data from account_tb table successfully fetched.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     EHNP_err = 1;
 end
-if(EHNP_err==0)
-    disp(['[' datestr(now) '] - - ' 'Data from account_tb table successfully fetched.']);
-end
+
 % Close cursor
 try
     close(HFRPusername_curs);
+    disp(['[' datestr(now) '] - - ' 'Cursor to account_tb table successfully closed.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     EHNP_err = 1;
-end
-if(EHNP_err==0)
-    disp(['[' datestr(now) '] - - ' 'Cursor to account_tb table successfully closed.']);
 end
 
 % Retrieve networks ID managed by the HFR provider username
@@ -130,12 +124,10 @@ if(EHNP_err==0)
         end
         reset_updatequeryR = [reset_updatequeryR HFRPnetworks{length(HFRPnetworks)} ''''];
         reset_radial_curs = exec(conn,reset_updatequeryR);
+        disp(['[' datestr(now) '] - - ' 'Query to radial_input_tb table successfully executed.']);
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         EHNP_err = 1;
-    end
-    if(EHNP_err==0)
-        disp(['[' datestr(now) '] - - ' 'Query to radial_input_tb table successfully executed.']);
     end
     
     % Set and exectute the query for total_input_tb
@@ -146,24 +138,20 @@ if(EHNP_err==0)
         end
         reset_updatequeryT = [reset_updatequeryT HFRPnetworks{length(HFRPnetworks)} ''''];
         reset_total_curs = exec(conn,reset_updatequeryT);
+        disp(['[' datestr(now) '] - - ' 'Query to total_input_tb table successfully executed.']);
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         EHNP_err = 1;
-    end
-    if(EHNP_err==0)
-        disp(['[' datestr(now) '] - - ' 'Query to total_input_tb table successfully executed.']);
-    end
+    end    
     
     % Close cursors
     try
         close(reset_radial_curs);
         close(reset_total_curs);
+        disp(['[' datestr(now) '] - - ' 'Cursors to radial_input_tb and total_input_tb table successfully closed.']);
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         EHNP_err = 1;
-    end
-    if(EHNP_err==0)
-        disp(['[' datestr(now) '] - - ' 'Cursors to radial_input_tb and total_input_tb table successfully closed.']);
     end
 end
 
@@ -181,4 +169,6 @@ HFRCombiner;
 %     inputCurAsc2DB;
 %     TotalConversion;
 
-disp(['[' datestr(now) '] - - ' 'OFFLINE_EU_HFR_Node_Processor run ended.']);
+if(EHNP_err==0)
+    disp(['[' datestr(now) '] - - ' 'OFFLINE_EU_HFR_Node_Processor run ended.']);
+end

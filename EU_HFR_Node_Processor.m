@@ -50,7 +50,7 @@ sqlConfig.database = 'HFR_node_db';
 
 try
     startDate = startCombinationDate(now);
-    startDate = '2012-12-31';
+    startDate = '2012-12-30';
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     HFRC_err = 1;

@@ -22,12 +22,10 @@ disp(['[' datestr(now) '] - - ' 'HFRCombiner started.']);
 
 try
     conn = database(sqlConfig.database,sqlConfig.user,sqlConfig.password,'Vendor','MySQL','Server',sqlConfig.host);
+    disp(['[' datestr(now) '] - - ' 'Connection to database successfully established.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     HFRC_err = 1;
-end
-if(HFRC_err==0)
-    disp(['[' datestr(now) '] - - ' 'Connection to database successfully established.']);
 end
 
 %%
@@ -38,35 +36,29 @@ end
 try
     HFRPusername_selectquery = ['SELECT network_id FROM account_tb WHERE username = ' '''' HFRPusername ''''];
     HFRPusername_curs = exec(conn,HFRPusername_selectquery);
+    disp(['[' datestr(now) '] - - ' 'Query to account_tb table for retrieving the networks managed by the HFR provider username successfully executed.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     HFRC_err = 1;
-end
-if(HFRC_err==0)
-    disp(['[' datestr(now) '] - - ' 'Query to account_tb table for retrieving the networks managed by the HFR provider username successfully executed.']);
 end
 
 % Fetch data
 try
     HFRPusername_curs = fetch(HFRPusername_curs);
     HFRPusername_data = HFRPusername_curs.Data;
+    disp(['[' datestr(now) '] - - ' 'Data of the networks managed by the HFR provider username successfully fetched from account_tb table.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     HFRC_err = 1;
-end
-if(HFRC_err==0)
-    disp(['[' datestr(now) '] - - ' 'Data of the networks managed by the HFR provider username successfully fetched from account_tb table.']);
 end
 
 % Close cursor
 try
     close(HFRPusername_curs);
+    disp(['[' datestr(now) '] - - ' 'Cursor to account_tb table successfully closed.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     HFRC_err = 1;
-end
-if(HFRC_err==0)
-    disp(['[' datestr(now) '] - - ' 'Cursor to account_tb table successfully closed.']);
 end
 
 %%
@@ -93,57 +85,47 @@ if(HFRC_err==0)
         end
         network_selectquery = [network_selectquery HFRPnetworks{length(HFRPnetworks)} ''') AND EU_HFR_processing_flag=0'];
         network_curs = exec(conn,network_selectquery);
+        disp(['[' datestr(now) '] - - ' 'Query to network_tb table for retrieving data of the managed networks successfully executed.']);
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         HFRC_err = 1;
     end
-    if(HFRC_err==0)
-        disp(['[' datestr(now) '] - - ' 'Query to network_tb table for retrieving data of the managed networks successfully executed.']);
-    end
-    
+        
     % Fetch data
     try
         network_curs = fetch(network_curs);
         network_data = network_curs.Data;
+        disp(['[' datestr(now) '] - - ' 'Data of the managed networks successfully fetched from network_tb table.']);
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         HFRC_err = 1;
     end
-    if(HFRC_err==0)
-        disp(['[' datestr(now) '] - - ' 'Data of the managed networks successfully fetched from network_tb table.']);
-    end
-    
+        
     % Retrieve column names
     try
         network_columnNames = columnnames(network_curs,true);
+        disp(['[' datestr(now) '] - - ' 'Column names from network_tb table successfully retrieved.']);
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         HFRC_err = 1;
     end
-    if(HFRC_err==0)
-        disp(['[' datestr(now) '] - - ' 'Column names from network_tb table successfully retrieved.']);
-    end
-    
+        
     % Retrieve the number of networks
     try
         numNetworks = rows(network_curs);
+        disp(['[' datestr(now) '] - - ' 'Number of managed networks successfully retrieved from network_tb table.']);
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         HFRC_err = 1;
     end
-    if(HFRC_err==0)
-        disp(['[' datestr(now) '] - - ' 'Number of managed networks successfully retrieved from network_tb table.']);
-    end
-    
+        
     % Close cursor
     try
         close(network_curs);
+        disp(['[' datestr(now) '] - - ' 'Cursor to network_tb table successfully closed.']);
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         HFRC_err = 1;
-    end
-    if(HFRC_err==0)
-        disp(['[' datestr(now) '] - - ' 'Cursor to network_tb table successfully closed.']);
     end
 end
 
@@ -216,59 +198,49 @@ try
         try
             station_selectquery = ['SELECT * FROM station_tb WHERE network_id = ' '''' network_data{network_idx,network_idIndex} ''''];
             station_curs = exec(conn,station_selectquery);
+            disp(['[' datestr(now) '] - - ' 'Query to station_tb table for retrieving the stations of the ' network_data{network_idx,network_idIndex} ' network successfully executed.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-        if(HFRC_err==0)
-            disp(['[' datestr(now) '] - - ' 'Query to station_tb table for retrieving the stations of the ' network_data{network_idx,network_idIndex} ' network successfully executed.']);
-        end
-        
+                
         % Fetch data
         try
             station_curs = fetch(station_curs);
             station_data = station_curs.Data;
+            disp(['[' datestr(now) '] - - ' 'Data of the stations of the ' network_data{network_idx,network_idIndex} ' network successfully fetched from station_tb table.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-        if(HFRC_err==0)
-            disp(['[' datestr(now) '] - - ' 'Data of the stations of the ' network_data{network_idx,network_idIndex} ' network successfully fetched from station_tb table.']);
-        end
-        
+                
         % Retrieve column names
         try
             station_columnNames = columnnames(station_curs,true);
+            disp(['[' datestr(now) '] - - ' 'Column names from station_tb table successfully retrieved.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-        if(HFRC_err==0)
-            disp(['[' datestr(now) '] - - ' 'Column names from station_tb table successfully retrieved.']);
-        end
-        
+                
         % Retrieve the number of stations belonging to the current network
         try
             numStations = rows(station_curs);
+            disp(['[' datestr(now) '] - - ' 'Number of stations belonging to the ' network_data{network_idx,network_idIndex} ' network successfully retrieved from station_tb table.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-        if(HFRC_err==0)
-            disp(['[' datestr(now) '] - - ' 'Number of stations belonging to the ' network_data{network_idx,network_idIndex} ' network successfully retrieved from station_tb table.']);
-        end
-        
+                
         % Close cursor to station_tb table
         try
             close(station_curs);
+            disp(['[' datestr(now) '] - - ' 'Cursor to station_tb table successfully closed.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-        if(HFRC_err==0)
-            disp(['[' datestr(now) '] - - ' 'Cursor to station_tb table successfully closed.']);
-        end
-        
+                
         try
             % Find the index of the input file path field
             inputPathIndexC = strfind(station_columnNames, 'radial_input_folder_path');
@@ -310,59 +282,49 @@ try
         try
             toBeCombinedRadials_selectquery = ['SELECT * FROM radial_input_tb WHERE datetime>' '''' startDate ''' AND network_id = ' '''' network_data{network_idx,network_idIndex} ''' AND NRT_processed_flag = 0 ORDER BY timestamp'];
             toBeCombinedRadials_curs = exec(conn,toBeCombinedRadials_selectquery);
+            disp(['[' datestr(now) '] - - ' 'Query to radial_input_tb table for retrieving the radial files from ' network_data{network_idx,network_idIndex} ' network to be combined successfully executed.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-        if(HFRC_err==0)
-            disp(['[' datestr(now) '] - - ' 'Query to radial_input_tb table for retrieving the radial files from ' network_data{network_idx,network_idIndex} ' network to be combined successfully executed.']);
-        end
-        
+                
         % Fetch data
         try
             toBeCombinedRadials_curs = fetch(toBeCombinedRadials_curs);
             toBeCombinedRadials_data = toBeCombinedRadials_curs.Data;
+            disp(['[' datestr(now) '] - - ' 'Data of the radial files from ' network_data{network_idx,network_idIndex} ' network to be combined successfully fetched from radial_input_tb table.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-        if(HFRC_err==0)
-            disp(['[' datestr(now) '] - - ' 'Data of the radial files from ' network_data{network_idx,network_idIndex} ' network to be combined successfully fetched from radial_input_tb table.']);
-        end
-        
+                
         % Retrieve column names
         try
             toBeCombinedRadials_columnNames = columnnames(toBeCombinedRadials_curs,true);
+            disp(['[' datestr(now) '] - - ' 'Column names from radial_input_tb table successfully retrieved.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-        if(HFRC_err==0)
-            disp(['[' datestr(now) '] - - ' 'Column names from radial_input_tb table successfully retrieved.']);
-        end
-        
+                
         % Retrieve the number of radials to be combined
         try
             numToBeCombinedRadials = rows(toBeCombinedRadials_curs);
+            disp(['[' datestr(now) '] - - ' 'Number of the radial files from ' network_data{network_idx,network_idIndex} ' network to be combined successfully retrieved from radial_input_tb table.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-        if(HFRC_err==0)
-            disp(['[' datestr(now) '] - - ' 'Number of the radial files from ' network_data{network_idx,network_idIndex} ' network to be combined successfully retrieved from radial_input_tb table.']);
-        end
-        
+                
         % Close cursor to radial_input_tb table
         try
             close(toBeCombinedRadials_curs);
+            disp(['[' datestr(now) '] - - ' 'Cursor to radial_input_tb table successfully closed.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-        if(HFRC_err==0)
-            disp(['[' datestr(now) '] - - ' 'Cursor to radial_input_tb table successfully closed.']);
-        end
-        
+                
         try
             % Find the index of the time stamp field
             timeStampIndexC = strfind(toBeCombinedRadials_columnNames, 'timestamp');
@@ -431,22 +393,18 @@ try
                         try
                             if (strcmp(toBeCombinedRadials_data{toBeCombinedStationIndex,extensionIndex}, 'ruv')) % Codar data
                                 [R2C_err,network_data(network_idx,:),station_data(toBeCombinedStationIndex,:),radOutputFilename,radOutputFilesize,station_tbUpdateFlag] = ruv2netCDF_v31(RADIAL(ruv_idx),network_data(network_idx,:),network_columnNames,station_data(toBeCombinedStationIndex,:),station_columnNames,toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),timeStampIndex});
-                                % LINES BELOW TO BE COMMENTED WHEN THE WERA FILE CONVERTER IS RUNNING
-                                %                                 disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1 file successfully created and stored.']);
+                                disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1 file successfully created and stored.']);
                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
                             elseif (strcmp(toBeCombinedRadials_data{toBeCombinedStationIndex,extensionIndex}, 'crad_ascii')) % WERA data
-                                % TO BE DONE
+                                % TO BE DONE -- UNCOMMETN LINES BELOW WHEN DONE
+%                                 disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1 file successfully created and stored.']);
+%                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
                             end
-                            %                                 % LINES BELOW TO BE UNCOMMENTED WHEN THE WERA FILE CONVERTER IS RUNNING
-                            %                                 disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1 file successfully created and stored.']);
-                            %                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
                         catch err
                             display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                             HFRC_err = 1;
                         end
-                        if (HFRC_err == 0)
-                            disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1 file successfully created and stored.']);
-                        end
+                        
                         % Insert radial info in radial_HFRnetCDF_tb table
                         try
                             if(exist('radOutputFilename','var') ~= 0)
@@ -466,16 +424,13 @@ try
                                 % Append the product data into the radial_HFRnetCDF_tb table on the database.
                                 tablename = 'radial_HFRnetCDF_tb';
                                 datainsert(conn,tablename,addColnames,addData);
-                            end
-                            
+                                disp(['[' datestr(now) '] - - ' radOutputFilename ' radial file information successfully inserted into radial_HFRnetCDF_tb table.']);
+                            end                            
                         catch err
                             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                             HFRC_err = 1;
                         end
-                        if(HFRC_err==0)
-                            disp(['[' datestr(now) '] - - ' radOutputFilename ' radial file information successfully inserted into radial_HFRnetCDF_tb table.']);
-                        end
-                        
+                                                
                         % Update the last calibration date on the station_tb table of the database (if needed)
                         try
                             if(station_tbUpdateFlag == 1)
@@ -560,15 +515,13 @@ try
                                 tablename = 'radial_input_tb';
                                 whereclause = ['WHERE timestamp = ' '''' toBeCombinedRadials_data{radial_idx,timeStampIndex} ''''];
                                 update(conn,tablename,updateColnames,updateData,whereclause);
+                                disp(['[' datestr(now) '] - - ' 'radial_input_tb table successfully updated with NRT processed flag for timestamp ' toBeCombinedRadials_data{radial_idx,timeStampIndex} '.']);
                             end
                         catch err
                             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                             HFRC_err = 1;
                         end
-                        if(HFRC_err==0)
-                            disp(['[' datestr(now) '] - - ' 'radial_input_tb table successfully updated with NRT processed flag for timestamp ' toBeCombinedRadials_data{radial_idx,timeStampIndex} '.']);
-                        end
-                        
+                                                
                         % Insert converted total info in total_HFRnetCDF_tb table
                         try
                             if(exist('totOutputFilename','var') ~= 0)
@@ -588,14 +541,12 @@ try
                                 % Append the product data into the total_HFRnetCDF_tb table on the database.
                                 tablename = 'total_HFRnetCDF_tb';
                                 datainsert(conn,tablename,addColnames,addData);
+                                disp(['[' datestr(now) '] - - ' totOutputFilename ' total combined file information successfully inserted into total_HFRnetCDF_tb table.']);
                             end
                         catch err
                             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                             HFRC_err = 1;
-                        end
-                        if(HFRC_err==0)
-                            disp(['[' datestr(now) '] - - ' totOutputFilename ' total combined file information successfully inserted into total_HFRnetCDF_tb table.']);
-                        end
+                        end                        
                     end
                     
                     clear radFiles RADIAL contrSitesIndices TUV TUVgrid TUVmask radOutputFilename totOutputFilename;
@@ -622,16 +573,16 @@ end
 
 try
     close(conn);
+    disp(['[' datestr(now) '] - - ' 'Connection to database successfully closed.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     HFRC_err = 1;
 end
-if(HFRC_err==0)
-    disp(['[' datestr(now) '] - - ' 'Connection to database successfully closed.']);
-end
 
 %%
 
-disp(['[' datestr(now) '] - - ' 'HFRCombiner successfully executed.']);
+if(HFRC_err==0)
+    disp(['[' datestr(now) '] - - ' 'HFRCombiner successfully executed.']);
+end
 
 pause(1200);
