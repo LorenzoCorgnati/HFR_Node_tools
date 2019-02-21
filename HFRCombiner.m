@@ -375,10 +375,10 @@ try
                     
                     try
                         % Load the radial files to be combined
-                        if (strcmp(toBeCombinedRadials_data{toBeCombinedStationIndex,extensionIndex}, 'ruv')) % Codar data
+                        if (strcmp(toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),extensionIndex}, 'ruv')) % Codar data
                             disp(['[' datestr(now) '] - - ' 'loadRDLfile loading ...']);
                             RADIAL = loadRDLFile(radFiles, 'false', 'warning');
-                        elseif(strcmp(toBeCombinedRadials_data{toBeCombinedStationIndex,extensionIndex}, 'crad_ascii')) % WERA data
+                        elseif(strcmp(toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),extensionIndex}, 'crad_ascii')) % WERA data
                             % TO BE DONE
                         end
                     catch err
@@ -391,11 +391,11 @@ try
                         toBeCombinedStationIndexC = strfind(station_data(:,STstation_idIndex), toBeCombinedRadials_data{toBeCombinedRadialIndices(ruv_idx),RIstation_idIndex});
                         toBeCombinedStationIndex = find(not(cellfun('isempty', toBeCombinedStationIndexC)));
                         try
-                            if (strcmp(toBeCombinedRadials_data{toBeCombinedStationIndex,extensionIndex}, 'ruv')) % Codar data
+                            if (strcmp(toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),extensionIndex}, 'ruv')) % Codar data
                                 [R2C_err,network_data(network_idx,:),station_data(toBeCombinedStationIndex,:),radOutputFilename,radOutputFilesize,station_tbUpdateFlag] = ruv2netCDF_v31(RADIAL(ruv_idx),network_data(network_idx,:),network_columnNames,station_data(toBeCombinedStationIndex,:),station_columnNames,toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),timeStampIndex});
                                 disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1 file successfully created and stored.']);
                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
-                            elseif (strcmp(toBeCombinedRadials_data{toBeCombinedStationIndex,extensionIndex}, 'crad_ascii')) % WERA data
+                            elseif (strcmp(toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),extensionIndex}, 'crad_ascii')) % WERA data
                                 % TO BE DONE -- UNCOMMETN LINES BELOW WHEN DONE
 %                                 disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1 file successfully created and stored.']);
 %                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
