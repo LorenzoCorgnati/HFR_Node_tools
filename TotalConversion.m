@@ -155,7 +155,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             TC_err = 1;
         end
-                
+        
         % Fetch data
         try
             station_curs = fetch(station_curs);
@@ -165,7 +165,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             TC_err = 1;
         end
-                
+        
         % Retrieve column names
         try
             station_columnNames = columnnames(station_curs,true);
@@ -174,7 +174,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             TC_err = 1;
         end
-                
+        
         % Retrieve the number of stations belonging to the current network
         try
             numStations = rows(station_curs);
@@ -183,7 +183,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             TC_err = 1;
         end
-                
+        
         % Close cursor to station_tb table
         try
             close(station_curs);
@@ -192,7 +192,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             TC_err = 1;
         end
-                
+        
         % Retrieve the total files to be converted
         try
             toBeConvertedTotals_selectquery = ['SELECT * FROM total_input_tb WHERE datetime>' '''' startDate ''' AND network_id = ' '''' network_data{network_idx,network_idIndex} ''' AND NRT_processed_flag = 0'];
@@ -202,7 +202,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             TC_err = 1;
         end
-                
+        
         % Fetch data
         try
             toBeConvertedTotals_curs = fetch(toBeConvertedTotals_curs);
@@ -212,7 +212,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             TC_err = 1;
         end
-                
+        
         % Retrieve column names
         try
             toBeConvertedTotals_columnNames = columnnames(toBeConvertedTotals_curs,true);
@@ -221,7 +221,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             TC_err = 1;
         end
-                
+        
         % Retrieve the number of totals to be converted for the current network
         try
             numToBeConvertedTotals = rows(toBeConvertedTotals_curs);
@@ -230,7 +230,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             TC_err = 1;
         end
-                
+        
         % Close cursor to total_input_tb table
         try
             close(toBeConvertedTotals_curs);
@@ -239,7 +239,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             TC_err = 1;
         end
-                
+        
         try
             % Find the index of the filename field
             filenameIndexC = strfind(toBeConvertedTotals_columnNames, 'filename');
@@ -274,30 +274,32 @@ try
                 disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                 TC_err = 1;
             end
-                        
+            
             % Update NRT_processed_flag in total_input_tb table
             try
-                % Find the index of the NRT_processed_flag field
-                NRT_processed_flagIndex = find(not(cellfun('isempty', strfind(toBeConvertedTotals_columnNames, 'NRT_processed_flag'))));
-                % Define a cell array containing the column names to be updated
-                updateColnames = {'NRT_processed_flag'};
-                
-                % Define a cell array that contains the data for insertion
-                updateData = {1};
-                
-                % Update the total_input_tb table on the database
-                tablename = 'total_input_tb';
-                whereclause = ['WHERE filename = ' '''' toBeConvertedTotals_data{toBeConverted_idx,filenameIndex} ''''];
-                update(conn,tablename,updateColnames,updateData,whereclause);
-                disp(['[' datestr(now) '] - - ' 'total_input_tb table successfully updated with NRT processed flag for timestamp ' toBeConvertedTotals_data{toBeConverted_idx,timestampIndex} '.']);
+                if(TC_err==0)
+                    % Find the index of the NRT_processed_flag field
+                    NRT_processed_flagIndex = find(not(cellfun('isempty', strfind(toBeConvertedTotals_columnNames, 'NRT_processed_flag'))));
+                    % Define a cell array containing the column names to be updated
+                    updateColnames = {'NRT_processed_flag'};
+                    
+                    % Define a cell array that contains the data for insertion
+                    updateData = {1};
+                    
+                    % Update the total_input_tb table on the database
+                    tablename = 'total_input_tb';
+                    whereclause = ['WHERE filename = ' '''' toBeConvertedTotals_data{toBeConverted_idx,filenameIndex} ''''];
+                    update(conn,tablename,updateColnames,updateData,whereclause);
+                    disp(['[' datestr(now) '] - - ' 'total_input_tb table successfully updated with NRT processed flag for timestamp ' toBeConvertedTotals_data{toBeConverted_idx,timestampIndex} '.']);
+                end
             catch err
                 disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                 TC_err = 1;
             end
-                        
+            
             % Insert converted total info in total_HFRnetCDF_tb table
             try
-                if(exist('outputFilename','var') ~= 0)
+                if((TC_err==0) && (exist('outputFilename','var') ~= 0))
                     % Delete the eventually present entry with the same name from the database
                     total_deletequery = ['DELETE FROM total_HFRnetCDF_tb WHERE filename = ' '''' outputFilename ''''];
                     total_deletecurs = exec(conn,total_deletequery);
@@ -320,11 +322,11 @@ try
                 disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                 TC_err = 1;
             end
-                        
+            
             clear outputFilename outputFilesize;
             
-        end        
-     end
+        end
+    end
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     TC_err = 1;

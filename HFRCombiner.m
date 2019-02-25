@@ -90,7 +90,7 @@ if(HFRC_err==0)
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         HFRC_err = 1;
     end
-        
+    
     % Fetch data
     try
         network_curs = fetch(network_curs);
@@ -100,7 +100,7 @@ if(HFRC_err==0)
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         HFRC_err = 1;
     end
-        
+    
     % Retrieve column names
     try
         network_columnNames = columnnames(network_curs,true);
@@ -109,7 +109,7 @@ if(HFRC_err==0)
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         HFRC_err = 1;
     end
-        
+    
     % Retrieve the number of networks
     try
         numNetworks = rows(network_curs);
@@ -118,7 +118,7 @@ if(HFRC_err==0)
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         HFRC_err = 1;
     end
-        
+    
     % Close cursor
     try
         close(network_curs);
@@ -203,7 +203,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-                
+        
         % Fetch data
         try
             station_curs = fetch(station_curs);
@@ -213,7 +213,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-                
+        
         % Retrieve column names
         try
             station_columnNames = columnnames(station_curs,true);
@@ -222,7 +222,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-                
+        
         % Retrieve the number of stations belonging to the current network
         try
             numStations = rows(station_curs);
@@ -231,7 +231,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-                
+        
         % Close cursor to station_tb table
         try
             close(station_curs);
@@ -240,7 +240,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-                
+        
         try
             % Find the index of the input file path field
             inputPathIndexC = strfind(station_columnNames, 'radial_input_folder_path');
@@ -287,7 +287,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-                
+        
         % Fetch data
         try
             toBeCombinedRadials_curs = fetch(toBeCombinedRadials_curs);
@@ -297,7 +297,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-                
+        
         % Retrieve column names
         try
             toBeCombinedRadials_columnNames = columnnames(toBeCombinedRadials_curs,true);
@@ -306,7 +306,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-                
+        
         % Retrieve the number of radials to be combined
         try
             numToBeCombinedRadials = rows(toBeCombinedRadials_curs);
@@ -315,7 +315,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-                
+        
         % Close cursor to radial_input_tb table
         try
             close(toBeCombinedRadials_curs);
@@ -324,7 +324,7 @@ try
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
         end
-                
+        
         try
             % Find the index of the time stamp field
             timeStampIndexC = strfind(toBeCombinedRadials_columnNames, 'timestamp');
@@ -397,8 +397,8 @@ try
                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
                             elseif (strcmp(toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),extensionIndex}, 'crad_ascii')) % WERA data
                                 % TO BE DONE -- UNCOMMETN LINES BELOW WHEN DONE
-%                                 disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1 file successfully created and stored.']);
-%                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
+                                %                                 disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1 file successfully created and stored.']);
+                                %                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
                             end
                         catch err
                             display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
@@ -407,7 +407,7 @@ try
                         
                         % Insert radial info in radial_HFRnetCDF_tb table
                         try
-                            if(exist('radOutputFilename','var') ~= 0)
+                            if((HFRC_err==0) && (exist('radOutputFilename','var') ~= 0))
                                 % Delete the eventually present entry with the same name from the database
                                 radial_deletequery = ['DELETE FROM radial_HFRnetCDF_tb WHERE filename = ' '''' radOutputFilename ''''];
                                 radial_deletecurs = exec(conn,radial_deletequery);
@@ -425,15 +425,15 @@ try
                                 tablename = 'radial_HFRnetCDF_tb';
                                 datainsert(conn,tablename,addColnames,addData);
                                 disp(['[' datestr(now) '] - - ' radOutputFilename ' radial file information successfully inserted into radial_HFRnetCDF_tb table.']);
-                            end                            
+                            end
                         catch err
                             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                             HFRC_err = 1;
                         end
-                                                
+                        
                         % Update the last calibration date on the station_tb table of the database (if needed)
                         try
-                            if(station_tbUpdateFlag == 1)
+                            if((HFRC_err==0) && (station_tbUpdateFlag == 1))
                                 % Define a cell array containing the column names to be updated
                                 updateColnames = {'last_calibration_date'};
                                 
@@ -496,7 +496,9 @@ try
                         
                         % Update NRT_processed_flag in the local radial table
                         try
-                            toBeCombinedRadials_data(toBeCombinedRadialIndices,NRT_processed_flagIndex)={1};
+                            if(HFRC_err==0)
+                                toBeCombinedRadials_data(toBeCombinedRadialIndices,NRT_processed_flagIndex)={1};
+                            end
                         catch err
                             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                             HFRC_err = 1;
@@ -504,7 +506,7 @@ try
                         
                         % Update NRT_processed_flag in radial_input_tb table
                         try
-                            if(length(toBeCombinedRadialIndices) == numActiveStations)
+                            if((HFRC_err==0) && (length(toBeCombinedRadialIndices) == numActiveStations))
                                 % Define a cell array containing the column names to be updated
                                 updateColnames = {'NRT_processed_flag'};
                                 
@@ -521,10 +523,10 @@ try
                             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                             HFRC_err = 1;
                         end
-                                                
+                        
                         % Insert converted total info in total_HFRnetCDF_tb table
                         try
-                            if(exist('totOutputFilename','var') ~= 0)
+                            if((HFRC_err==0) && (exist('totOutputFilename','var') ~= 0))
                                 % Delete the eventually present entry with the same name from the database
                                 total_deletequery = ['DELETE FROM total_HFRnetCDF_tb WHERE filename = ' '''' totOutputFilename ''''];
                                 total_deletecurs = exec(conn,total_deletequery);
@@ -546,7 +548,7 @@ try
                         catch err
                             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                             HFRC_err = 1;
-                        end                        
+                        end
                     end
                     
                     clear radFiles RADIAL contrSitesIndices TUV TUVgrid TUVmask radOutputFilename totOutputFilename;
