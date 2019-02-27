@@ -56,11 +56,11 @@ sqlConfig.database = 'HFR_node_db';
 %% Set datetime of the starting date of the processing period
 
 try
-    startDate = startCombinationDate(now);
+%     startDate = startCombinationDate(now);
     startDate = '2018-12-05';
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    HFRC_err = 1;
+    EHNP_err = 1;
 end
 
 %%
