@@ -160,6 +160,7 @@ end
 try
     % Scan the networks
     for network_idx=1:numNetworks
+        HFRC_err = 0;
         % Build the regular LonLat grid given the geographical boundaries and the grid resolution for the radial combination into total
         [gridLon, gridLat] = LonLat_grid([network_data{network_idx,geospatial_lon_minIndex},network_data{network_idx,geospatial_lat_minIndex}], [network_data{network_idx,geospatial_lon_maxIndex},network_data{network_idx,geospatial_lat_maxIndex}], network_data{network_idx,grid_resolutionIndex}, 'km');
         gridLat = flipud(gridLat);
@@ -356,6 +357,7 @@ try
         try
             % Scan the radials to be combined, group them by timestamp and combine them
             for radial_idx=1:numToBeCombinedRadials
+                HFRC_err = 0;
                 if(toBeCombinedRadials_data{radial_idx,NRT_processed_flagIndex} == 0)
                     % Find the indices of the radial files of the current timestamp to be combined
                     toBeCombinedRadialIndicesC = strfind(toBeCombinedRadials_data(:,timeStampIndex), toBeCombinedRadials_data{radial_idx,timeStampIndex});
