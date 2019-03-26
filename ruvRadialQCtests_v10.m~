@@ -299,9 +299,9 @@ if(RQC_err==0)
                     end
                 end
             end
-            % Modify the overall QC variable and the date_update attribute of the nc file of the previous hour
+            % Modify the overall QC variable and the of the nc file of the previous hour
             ncwrite(Radial_QC_params.TempDerThr.hour1,'QCflag',int16(overall1h));
-            ncwriteatt(Radial_QC_params.TempDerThr.hour1,'/','date_update',char([datestr(now, 'yyyy-mm-dd') 'T' datestr(now, 'HH:MM:SS') 'Z']));
+            
             disp(['[' datestr(now) '] - - ' [name1h,ext1h] ' previous time step nc file successfully updated with the overall QC variable.']);
         end
     catch err
