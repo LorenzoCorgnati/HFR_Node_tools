@@ -56,7 +56,10 @@ while(kk>0)
     
     try
         startDate = startCombinationDate(now);
+<<<<<<< HEAD
 %         startDate = '2019-01-29';
+=======
+>>>>>>> 648eb0fcc1b512e48afc1f48827c7b4798c987c3
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         HFRC_err = 1;
