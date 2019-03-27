@@ -398,13 +398,13 @@ try
                                 disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1 file successfully created and stored.']);
                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
                             elseif (strcmp(toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),extensionIndex}, 'crad_ascii')) % WERA data
-                                % TO BE DONE -- UNCOMMETN LINES BELOW WHEN DONE
+                                % TO BE DONE -- UNCOMMENT LINES BELOW WHEN DONE
                                 %                                 disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1 file successfully created and stored.']);
                                 %                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
                             end
                         catch err
                             display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-                            HFRC_err = 1;
+                            HFRC_err = 2;
                         end
                         
                         % Insert radial info in radial_HFRnetCDF_tb table
@@ -457,7 +457,7 @@ try
                     end
                     
                     % Combine the Codar radial files into total
-                    if(size(radFiles,2)>1)
+                    if((size(radFiles,2)>1) && (HFRC_err~=2))
                         if (strcmp(toBeCombinedRadials_data{toBeCombinedStationIndex,extensionIndex}, 'ruv')) % Codar data
                             try
                                 disp(['[' datestr(now) '] - - ' 'makeTotals combining radials...']);
