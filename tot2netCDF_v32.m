@@ -34,7 +34,7 @@
 
 
 % Author: Lorenzo Corgnati
-% Date: May 14, 2019
+% Date: July 30, 2018
 
 % E-mail: lorenzo.corgnati@sp.ismar.cnr.it
 %%
@@ -448,7 +448,7 @@ end
 try
     nccreate(ncfile,'TIME',...
         'Dimensions',{'TIME',time_dim},...
-        'Datatype','single',...
+        'Datatype','double',...
         'Format',ncfmt);
     
     nccreate(ncfile,'LATITUDE',...
@@ -963,7 +963,8 @@ try
     
     %% Writes values in variables
     %         ncwrite(ncfile,'TIME',int32((mat_tot.TimeStamp-timeref)*86400));
-    ncwrite(ncfile,'TIME',single(mat_tot.TimeStamp-timeref));
+%     ncwrite(ncfile,'TIME',single(mat_tot.TimeStamp-timeref));
+    ncwrite(ncfile,'TIME',mat_tot.TimeStamp-timeref);
     ncwrite(ncfile,'LATITUDE',latGrid);
     ncwrite(ncfile,'LONGITUDE',lonGrid);
     ncwrite(ncfile,'crs',0);
