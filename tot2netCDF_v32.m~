@@ -1,12 +1,11 @@
-%% curAsc2netCDF_v32.m
-% This function converts hourly total files from native WERA ASCII format
-% .cur_asc in netCDF-4 format according to the European common data and metadata
+%% tot2netCDF_v32.m
+% This function converts hourly total files combined starting from radial
+% files in netCDF-4 format according to the European common data and metadata
 % model integrating CMEMS-INSTAC and SDC CF extension requirements.
 % v3.2 uses scale_factor and add_offset for packing geophysical variables.
 
 % INPUT:
-%         totFilename: filename of the total file to be converted (including full path)
-%         timestamp: timestamp of the total file to be converted
+%         mat_tot: structure containing radial file in Codar format
 %         networkData: cell array containing information about the network
 %                      (metadata)
 %         networkFields: field names of the cell array containing
@@ -17,25 +16,29 @@
 %                       information about the station.
 
 % OUTPUT:
-%         cA2C_err: error flag (0 = correct, 1 = error)
+%         T2C_err: error flag (0 = correct, 1 = error)
 %         networkData: cell array containing information about the network.
+%                       It is returned in case an update of the database is
+%                       needed.
+%         stationData: cell array containing information about the station.
 %                       It is returned in case an update of the database is
 %                       needed.
 %         ncFileNoPath: filename of the converted nc file, without the full path
 %         ncFilesize: size of the converted nc file.
+%         timestamp: timestamp of the total file to be converted.
 
 
 % Author: Lorenzo Corgnati
-% Date: June 6, 2019
+% Date: May 31, 2019
 
 % E-mail: lorenzo.corgnati@sp.ismar.cnr.it
 %%
 
-function [cA2C_err,networkData,ncFileNoPath,ncFilesize] = curAsc2netCDF_v32(totFilename,timestamp,networkData,networkFields,stationData,stationFields)
+function [T2C_err,networkData,stationData,ncFileNoPath,ncFilesize] = tot2netCDF_v32(mat_tot, networkData, networkFields, stationData, stationFields,timestamp)
 
-disp(['[' datestr(now) '] - - ' 'curAsc2netCDF_v32.m started.']);
+disp(['[' datestr(now) '] - - ' 'tot2netCDF_v32.m started.']);
 
-cA2C_err = 0;
+T2C_err = 0;
 
 warning('off', 'all');
 
@@ -46,85 +49,29 @@ addOffset = 0;
 
 %%
 
-% %% Load the total file
-% 
-% try
-%     % Load the total file as text
-%     ascFile = textread(totFilename,  '%s', 'whitespace', '\n');
-% catch err
-%     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-%     cA2C_err = 1;
-% end
-% 
-% %%
-
-%% Retrieve the file header, the data table, the column names of the data table and site codes and coordinates
+%% Retrieve site codes and coordinates
 
 try
-    % Read the number of contributing radial stations
-    nStation=textread(totFilename,'%u',1);
+    % Find the index of the site_lon field
+    site_lonIndexC = strfind(stationFields, 'site_lon');
+    site_lonIndex = find(not(cellfun('isempty', site_lonIndexC)));
     
-%     % Read the file header and the data table
-%     [cA2C_err, ascHeader, tableFields, ascTable] = curAscHeaderDataTable(ascFile);
-    % Read the data table
-    [IX,IY,U,V,KL,Acc_U,Acc_V] = textread(totFilename,'%u %u %f %f %d %f %f','headerlines', nStation+9);
-    ascTable=[IX,IY,U,V,KL,Acc_U,Acc_V];
-    tableFields={'IX'    'IY'    'U[m/s]'    'V[m/s]'    'KL'    'Acc_U[m/s]'    'Acc_V[m/s]'}; % TO BE CANCELLED AFTER JAN'S CONFIRMATION
+    % Find the index of the site_lat field
+    site_latIndexC = strfind(stationFields, 'site_lat');
+    site_latIndex = find(not(cellfun('isempty', site_latIndexC)));
     
-    % Retrieve site codes and coordinates
-%     [cA2C_err,sitesCodes,sitesLat,sitesLon] = curAscSiteCodeCoord(ascHeader);
-    for st_idx=1:nStation
-        [sitesCodes(st_idx,:),sitesLat(st_idx),NS,sitesLon(st_idx),EW] = textread(totFilename, '%*11c %*0c %*5c %*0c %*3c %*0c %s %*0c %f %*0c %s %*0c %f %*0c %s',1, 'headerlines',st_idx);
-        if(strcmp(NS,'South'))
-            sitesLat(st_idx) = -sitesLat(st_idx);
-        end
-        if(strcmp(EW,'West'))
-            sitesLon(st_idx) = -sitesLon(st_idx);
-        end
-        assert(sitesLat(st_idx)>=-90.0 & sitesLat(st_idx)<=90.0,[sitesCodes{st_idx,:} ' site latitude out of range']);
-        assert(sitesLon(st_idx)>=-180.0 & sitesLon(st_idx)<=180.0,[sitesCodes{st_idx,:} ' site longitude out of range']);
-    end
-    sitesCodes=char(sitesCodes);
-    sitesCodes = upper(sitesCodes(:,1:4));
+    % Find the index of the station_id field
+    station_idIndexC = strfind(stationFields, 'station_id');
+    station_idIndex = find(not(cellfun('isempty', station_idIndexC)));
     
-    % Retrieve top-left point of the first gridcell, cell size and number of lon and lat gridcells
-%     [cA2C_err,topLeftLat,topLeftLon, cellSize, lonCells,latCells] = curAscGridSpec(ascHeader);
-    [topLeftLat,topLeftLon, cellSize, lonCells,latCells]=textread(totFilename,'%f %f %f %u %u',1,'headerlines', nStation+4);
-    assert(topLeftLat>=-90.0 & topLeftLat<=90.0,'Grid top-left latitude out of range');
-    assert(topLeftLon>=-180.0 & topLeftLon<=180.0,'Grid top-left latitude out of range');
+    % Build the arrays for site coordinates and codes
+    sitesLon = cell2mat(stationData(:,site_lonIndex));
+    sitesLat = cell2mat(stationData(:,site_latIndex));
+    sitesCodes = cell2mat(stationData(:,station_idIndex));
+    
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
-end
-
-%%
-
-
-%% Create the regular grid
-
-try
-    % Retrieve the lower left and upper right coordinates
-    [LLlon, LLlat] = km2lonlat(topLeftLon,topLeftLat,0,-(cellSize*latCells+1));
-    [URlon, URlat] = km2lonlat(topLeftLon,topLeftLat,(cellSize*lonCells+1),0);
-    
-    % Create the lon/lat regular grid
-    [gridLon, gridLat] = LonLat_grid([LLlon, LLlat], [URlon, URlat], cellSize, 'km');
-    gridLat = flipud(gridLat);
-catch err
-    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
-end
-
-%%
-
-%% Create the TUV structure and fill it with the total data
-
-try
-    % Fill the TUV structure with the total data
-    [cA2C_err,mat_tot] = curAscTable2TUV(ascTable,tableFields,timestamp,gridLon,gridLat);
-catch err
-    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 %%
@@ -152,17 +99,17 @@ try
     NT_institution_name = networkData{NT_institution_nameIndex};
     
     % Find the institution_name field from station data
-    ST_institution_nameIndex = find(not(cellfun('isempty', strfind(stationFields, 'institution_name'))));
-    ST_institution_name = stationData(:,ST_institution_nameIndex);
+    ST_DoIndex = find(not(cellfun('isempty', strfind(stationFields, 'institution_name'))));
+    ST_institution_name = stationData(:,ST_DoIndex);
     ST_institution_name(cellfun('isempty',ST_institution_name)) = [];
     
     % Build the cumulative institution name list
     institutionList = [NT_institution_name; ST_institution_name];
     institution_names = institutionList(ia);
-    institution_nameStr = strjoin(institution_names,'; ');  
+    institution_nameStr = strjoin(institution_names,'; ');      
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 %%
@@ -208,29 +155,29 @@ ncfmt = 'netcdf4_classic';
 
 % Set total data on a regular grid.
 try
-    lonGrid = gridLon(1,:)';
-    latGrid = gridLat(:,1);
+    lonGrid = unique(mat_tot.LonLat(:,1));
+    latGrid = unique(mat_tot.LonLat(:,2));
     depth = 0;
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 try
     % Prepare variables
+    
     mat_tot.U_grid = NaN.*ones(length(lonGrid),length(latGrid),1);
     mat_tot.V_grid = NaN.*ones(length(lonGrid),length(latGrid),1);
     
     mat_tot.U_std = NaN.*ones(length(lonGrid),length(latGrid),1);
     mat_tot.V_std = NaN.*ones(length(lonGrid),length(latGrid),1);
     
-    mat_tot.U_acc = NaN.*ones(length(lonGrid),length(latGrid),1);
-    mat_tot.V_acc = NaN.*ones(length(lonGrid),length(latGrid),1);
+    mat_tot.covariance = NaN.*ones(length(lonGrid),length(latGrid),1);
     
     mat_tot.GDOP = NaN.*ones(length(lonGrid),length(latGrid),1);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 % Populate variables
@@ -240,17 +187,21 @@ try
         latGrid_idx = find(latGrid==mat_tot.LonLat(i,2));
         % U and V components of current velocity
         if (not(isnan(mat_tot.U(i))))
-            mat_tot.U_grid(lonGrid_idx,latGrid_idx,1) = mat_tot.U(i);
+            mat_tot.U_grid(lonGrid_idx,latGrid_idx,1) = mat_tot.U(i)*0.01;
         end
         if (not(isnan(mat_tot.V(i))))
-            mat_tot.V_grid(lonGrid_idx,latGrid_idx,1) = mat_tot.V(i);
+            mat_tot.V_grid(lonGrid_idx,latGrid_idx,1) = mat_tot.V(i)*0.01;
         end
-        % U and V accuracies
+        % U and V standard errors
         if (not(isnan(mat_tot.ErrorEstimates(1,1).Uerr(i))))
-            mat_tot.U_acc(lonGrid_idx,latGrid_idx,1) = sqrt(mat_tot.ErrorEstimates(1,1).Uerr(i));
+            mat_tot.U_std(lonGrid_idx,latGrid_idx,1) = sqrt(mat_tot.ErrorEstimates(1,1).Uerr(i))*0.01;
         end
         if (not(isnan(mat_tot.ErrorEstimates(1,1).Verr(i))))
-            mat_tot.V_acc(lonGrid_idx,latGrid_idx,1) = sqrt(mat_tot.ErrorEstimates(1,1).Verr(i));
+            mat_tot.V_std(lonGrid_idx,latGrid_idx,1) = sqrt(mat_tot.ErrorEstimates(1,1).Verr(i))*0.01;
+        end
+        % UV covariance
+        if (not(isnan(mat_tot.ErrorEstimates(1,1).UVCovariance(i))))
+            mat_tot.covariance(lonGrid_idx,latGrid_idx,1) = mat_tot.ErrorEstimates(1,1).UVCovariance(i)*0.0001;
         end
         % GDOP
         if (not(isnan(mat_tot.ErrorEstimates(1,1).TotalErrors(i))))
@@ -259,7 +210,7 @@ try
     end
 catch err
     display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 % Set reference time
@@ -275,7 +226,7 @@ try
 %     [year,mon,day,hr,minutes,sec] = datevec(timeref);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 % Set data creation time and date and start and stop time and date of the
@@ -297,10 +248,10 @@ try
     startDate = [num2str(creation(1)) '-' num2str(creation(2)) '-' num2str(creation(3))];
 catch err
     display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C = 1;
 end
 
-% Set ADCC compliant data creation, coverage times and spatial resolution.
+% Set ADCC compliant data creation, coverage, resolution, duration times and spatial resolution.
 try
     % File creation datetime
     dateCreated = [datestr(now, 'yyyy-mm-dd') 'T' datestr(now, 'HH:MM:SS') 'Z'];
@@ -330,7 +281,7 @@ try
     lonRes = mean(diff(lonGrid));
 catch err
     display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C = 1;
 end
 
 % Set nc output file name
@@ -350,7 +301,7 @@ try
     end
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 % Set citation string and distribution string
@@ -360,7 +311,7 @@ try
     distribution_str = 'These data follow Copernicus standards; they are public and free of charge. User assumes all risk for use of data. User must display citation in any publication or product using data. User must contact PI prior to any commercial use of data.';
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 % Set naming authority
@@ -387,7 +338,7 @@ try
     naming_authorityStr= naming_authorityStr(~isspace(naming_authorityStr));
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 % Set collection time
@@ -396,7 +347,7 @@ try
     time_coll = [datestr(ts, 'yyyy-mm-dd') 'T' datestr(ts, 'HH:MM:SS') 'Z'];
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 try
@@ -410,7 +361,7 @@ try
     xlink = ['<sdn_reference xlink:href="' TDS_catalog '" xlink:role="" xlink:type="URL"/>'];
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 % Gets dimensions
@@ -420,15 +371,15 @@ try
     lat_dim = size(latGrid,1);
     lon_dim = size(lonGrid,1);
     depth_dim = 1;
-    maxSite_dim = size(sitesCodes,1);
-    maxInst_dim = length(EDMO_code);
+    maxSite_dim = 50;
     refMax_dim = 1;
+    maxInst_dim = length(EDMO_code);
     string15_dim = 15;
     string50_dim = 50;
     string250_dim = 250;
 catch err
     display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 % Deletes the eventually present netCDF file with the same name
@@ -436,7 +387,7 @@ try
     delete(ncfile);
 catch err
     display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 %%
@@ -456,7 +407,7 @@ try
     Total_QC_params.DataDensityThr = networkData{dataDens_Index};
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 %%
@@ -469,11 +420,12 @@ try
     Total_QC_params.TempDerThr.hour2 = [ncFilePath(1:length(ncFilePath)-length(twoHoursBefore.fP)) twoHoursBefore.fP filesep networkData{network_idIndex} '-Total_' twoHoursBefore.TS '.nc'];
     Total_QC_params.TempDerThr.hour1 = [ncFilePath(1:length(ncFilePath)-length(oneHourBefore.fP)) oneHourBefore.fP filesep networkData{network_idIndex} '-Total_' oneHourBefore.TS '.nc'];
     
-    [overall_QCflag, varianceThreshold_QCflag, temporalDerivativeThreshold_QCflag, GDOP_QCflag, dataDensity_QCflag, velocityThreshold_QCflag] = curAscTotalQCtests_v11(mat_tot, Total_QC_params);
+    [overall_QCflag, varianceThreshold_QCflag, temporalDerivativeThreshold_QCflag, GDOP_QCflag, dataDensity_QCflag, velocityThreshold_QCflag] = TotalQCtests_v11(mat_tot, Total_QC_params);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
+
 
 %%
 
@@ -481,6 +433,7 @@ end
 try
     % Time quality flag
     sdnTime_QCflag = 1;
+    
     % Position quality flag
     sdnPosition_QCflag = netcdf.getConstant('NC_FILL_BYTE').*int8(ones(length(lonGrid),length(latGrid),1));
     sdnPosition_QCflag(~isnan(mat_tot.U_grid)) = 1;
@@ -489,7 +442,7 @@ try
     sdnDepth_QCflag = 1;
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 %%
@@ -574,16 +527,10 @@ try
         'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
         'Format',ncfmt);
     
-    nccreate(ncfile,'UACC',...
+    nccreate(ncfile,'CCOV',...
         'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
-        'Datatype','int16',...
-        'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
-        'Format',ncfmt);
-    
-    nccreate(ncfile,'VACC',...
-        'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
-        'Datatype','int16',...
-        'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
+        'Datatype','int32',...
+        'FillValue',netcdf.getConstant('NC_FILL_INT'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'GDOP',...
@@ -702,7 +649,7 @@ try
     
     ncwriteatt(ncfile,'LATITUDE','long_name',char('Latitude of each location'));
     ncwriteatt(ncfile,'LATITUDE','standard_name',char('latitude'));
-    ncwriteatt(ncfile,'LATITUDE','units',char('degree_north'));
+    ncwriteatt(ncfile,'LATITUDE','units',char('degrees_north'));
     ncwriteatt(ncfile,'LATITUDE','axis',char('Y'));
     ncwriteatt(ncfile,'LATITUDE','sdn_parameter_name',char('Latitude north'));
     ncwriteatt(ncfile,'LATITUDE','sdn_parameter_urn',char('SDN:P01::ALATZZ01'));
@@ -711,9 +658,9 @@ try
     ncwriteatt(ncfile,'LATITUDE','grid_mapping',char('crs'));
     ncwriteatt(ncfile,'LATITUDE','ancillary_variables',char('POSITION_SEADATANET_QC'));
     
-    ncwriteatt(ncfile,'LONGITUDE','long_name',char('Longitude of each location'));
+    ncwriteatt(ncfile,'LONGITUDE','long_name',char('Longitude'));
     ncwriteatt(ncfile,'LONGITUDE','standard_name',char('longitude'));
-    ncwriteatt(ncfile,'LONGITUDE','units',char('degree_east'));
+    ncwriteatt(ncfile,'LONGITUDE','units',char('degrees_east'));
     ncwriteatt(ncfile,'LONGITUDE','axis',char('X'));
     ncwriteatt(ncfile,'LONGITUDE','sdn_parameter_name',char('Longitude east'));
     ncwriteatt(ncfile,'LONGITUDE','sdn_parameter_urn',char('SDN:P01::ALONZZ01'));
@@ -753,8 +700,8 @@ try
     ncwriteatt(ncfile,'DEPH','sdn_uom_urn',char('SDN:P06::ULAA'));
     ncwriteatt(ncfile,'DEPH','ancillary_variables',char('DEPTH_SEADATANET_QC'));
     
-    ncwriteatt(ncfile,'EWCT','long_name',char('West-east current component'));
-    ncwriteatt(ncfile,'EWCT','standard_name',char('eastward_sea_water_velocity'));
+    ncwriteatt(ncfile,'EWCT','long_name',char('Surface Eastward Sea Water Velocity'));
+    ncwriteatt(ncfile,'EWCT','standard_name',char('surface_eastward_sea_water_velocity'));
     ncwriteatt(ncfile,'EWCT','units',char('m s-1'));
     ncwriteatt(ncfile,'EWCT','scale_factor',double(scaleFactor));
     ncwriteatt(ncfile,'EWCT','add_offset',double(addOffset));
@@ -771,8 +718,8 @@ try
     %         ncwriteatt(ncfile,'EWCT','valid_max',double(10.0));
     ncwriteatt(ncfile,'EWCT','ancillary_variables',char('QCflag, VART_QC, CSPD_QC, DDNS_QC, GDOP_QC'));
     
-    ncwriteatt(ncfile,'NSCT','long_name',char('South-north current component'));
-    ncwriteatt(ncfile,'NSCT','standard_name',char('northward_sea_water_velocity'));
+    ncwriteatt(ncfile,'NSCT','long_name',char('Surface Northward Sea Water Velocity'));
+    ncwriteatt(ncfile,'NSCT','standard_name',char('surface_northward_sea_water_velocity'));
     ncwriteatt(ncfile,'NSCT','units',char('m s-1'));
     ncwriteatt(ncfile,'NSCT','scale_factor',double(scaleFactor));
     ncwriteatt(ncfile,'NSCT','add_offset',double(addOffset));
@@ -819,29 +766,20 @@ try
     ncwriteatt(ncfile,'NSCS','sdn_uom_urn',char('SDN:P06::UVAA'));
     ncwriteatt(ncfile,'NSCS','ancillary_variables',char('QCflag, VART_QC'));
     
-    ncwriteatt(ncfile,'UACC','long_name',char('Accuracy of Surface Eastward Sea Water Velocity'));
-    ncwriteatt(ncfile,'UACC','units',char('m s-1'));
-    ncwriteatt(ncfile,'UACC','valid_range',int16([(-10-addOffset)./scaleFactor, (10-addOffset)./scaleFactor]));
-    ncwriteatt(ncfile,'UACC','coordinates',char('TIME DEPH LATITUDE LONGITUDE'));
-    ncwriteatt(ncfile,'UACC','scale_factor',double(scaleFactor));
-    ncwriteatt(ncfile,'UACC','add_offset',double(addOffset));
-    ncwriteatt(ncfile,'UACC','sdn_parameter_name',char(''));
-    ncwriteatt(ncfile,'UACC','sdn_parameter_urn',char(''));
-    ncwriteatt(ncfile,'UACC','sdn_uom_name',char('Metres per second'));
-    ncwriteatt(ncfile,'UACC','sdn_uom_urn',char('SDN:P06::UVAA'));
-    ncwriteatt(ncfile,'UACC','ancillary_variables',char('QCflag, VART_QC'));
-    
-    ncwriteatt(ncfile,'VACC','long_name',char('Accuracy of Surface Northward Sea Water Velocity'));
-    ncwriteatt(ncfile,'VACC','units',char('m s-1'));
-    ncwriteatt(ncfile,'VACC','valid_range',int16([(-10-addOffset)./scaleFactor, (10-addOffset)./scaleFactor]));
-    ncwriteatt(ncfile,'VACC','coordinates',char('TIME DEPH LATITUDE LONGITUDE'));
-    ncwriteatt(ncfile,'VACC','scale_factor',double(scaleFactor));
-    ncwriteatt(ncfile,'VACC','add_offset',double(addOffset));
-    ncwriteatt(ncfile,'VACC','sdn_parameter_name',char(''));
-    ncwriteatt(ncfile,'VACC','sdn_parameter_urn',char(''));
-    ncwriteatt(ncfile,'VACC','sdn_uom_name',char('Metres per second'));
-    ncwriteatt(ncfile,'VACC','sdn_uom_urn',char('SDN:P06::UVAA'));
-    ncwriteatt(ncfile,'VACC','ancillary_variables',char('QCflag, VART_QC'));
+    ncwriteatt(ncfile,'CCOV','long_name',char('Covariance of Surface Sea Water Velocity'));
+    %         ncwriteatt(ncfile,'CCOV','standard_name',char('surface_sea_water_velocity_covariance'));
+    ncwriteatt(ncfile,'CCOV','units',char('m2 s-2'));
+    ncwriteatt(ncfile,'CCOV','valid_range',int32([(-10-addOffset)./(scaleFactor^2), (10-addOffset)./(scaleFactor^2)]));
+    ncwriteatt(ncfile,'CCOV','coordinates',char('TIME DEPH LATITUDE LONGITUDE'));
+    %         ncwriteatt(ncfile,'CCOV','valid_min',double(-10.0));
+    %         ncwriteatt(ncfile,'CCOV','valid_max',double(10.0));
+    ncwriteatt(ncfile,'CCOV','scale_factor',double(scaleFactor^2));
+    ncwriteatt(ncfile,'CCOV','add_offset',double(addOffset));
+    ncwriteatt(ncfile,'CCOV','sdn_parameter_name',char(''));
+    ncwriteatt(ncfile,'CCOV','sdn_parameter_urn',char(''));
+    ncwriteatt(ncfile,'CCOV','sdn_uom_name',char('Square metres per second squared'));
+    ncwriteatt(ncfile,'CCOV','sdn_uom_urn',char('SDN:P06::SQM2'));
+    ncwriteatt(ncfile,'CCOV','ancillary_variables',char('QCflag'));
     
     ncwriteatt(ncfile,'GDOP','long_name',char('Geometrical Dilution Of Precision'));
     %         ncwriteatt(ncfile,'GDOP','standard_name',char('gdop'));
@@ -905,7 +843,7 @@ try
     ncwriteatt(ncfile,'VART_QC','flag_values',int8([0 1 2 3 4 7 8 9]));
     ncwriteatt(ncfile,'VART_QC','flag_meanings',char('unknown good_data probably_good_data potentially_correctable_bad_data bad_data nominal_value interpolated_value missing_value'));
     ncwriteatt(ncfile,'VART_QC','comment',char(['OceanSITES quality flagging for variance threshold QC test. ' ...
-        'Test not applicable. The Temporal Derivative test is applied.' ...
+        'Test not applicable to Direction Finding systems. The Temporal Derivative test is applied.' ...
         'Threshold set to ' num2str(Total_QC_params.TempDerThr.threshold) ' m/s. ']));
     ncwriteatt(ncfile,'VART_QC','scale_factor',int8(1));
     ncwriteatt(ncfile,'VART_QC','add_offset',int8(0));
@@ -1043,20 +981,19 @@ try
     ncwrite(ncfile,'NSCT',mat_tot.V_grid);
     ncwrite(ncfile,'EWCS',mat_tot.U_std);
     ncwrite(ncfile,'NSCS',mat_tot.V_std);
-    ncwrite(ncfile,'UACC',mat_tot.U_acc);
-    ncwrite(ncfile,'VACC',mat_tot.V_acc);
+    ncwrite(ncfile,'CCOV',mat_tot.covariance);
     ncwrite(ncfile,'GDOP',mat_tot.GDOP);
     ncwrite(ncfile,'NARX',length(sitesLat));
     ncwrite(ncfile,'NATX',length(sitesLat));
-    ncwrite(ncfile,'SLTR',sitesLat');
-    ncwrite(ncfile,'SLNR',sitesLon');
-    ncwrite(ncfile,'SLTT',sitesLat');
-    ncwrite(ncfile,'SLNT',sitesLon');
+    ncwrite(ncfile,'SLTR',sitesLat);
+    ncwrite(ncfile,'SLNR',sitesLon);
+    ncwrite(ncfile,'SLTT',sitesLat);
+    ncwrite(ncfile,'SLNT',sitesLon);
     ncwrite(ncfile,'SCDR',sitesCodes');
     ncwrite(ncfile,'SCDT',sitesCodes');
-    ncwrite(ncfile,'TIME_SEADATANET_QC',sdnTime_QCflag);
+    ncwrite(ncfile,'TIME_SEADATANET_QC',int8(sdnTime_QCflag));
     ncwrite(ncfile,'POSITION_SEADATANET_QC',sdnPosition_QCflag);
-    ncwrite(ncfile,'DEPTH_SEADATANET_QC',sdnDepth_QCflag);
+    ncwrite(ncfile,'DEPTH_SEADATANET_QC',int8(sdnDepth_QCflag));
     ncwrite(ncfile,'QCflag',overall_QCflag);
     ncwrite(ncfile,'VART_QC',temporalDerivativeThreshold_QCflag);
     ncwrite(ncfile,'GDOP_QC',GDOP_QCflag);
@@ -1175,7 +1112,7 @@ try
     
 catch err
     display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 %% Retrieve information about the nc file
@@ -1184,13 +1121,13 @@ try
     ncFilesize = ncfileInfo.bytes/1024;
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
+    T2C_err = 1;
 end
 
 %%
 
-if(cA2C_err==0)
-    disp(['[' datestr(now) '] - - ' 'curAsc2netCDF_v32.m successfully executed.']);
+if(T2C_err==0)
+    disp(['[' datestr(now) '] - - ' 'tot2netCDF_v32.m successfully executed.']);
 end
 
 return
