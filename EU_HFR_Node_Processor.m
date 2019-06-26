@@ -56,7 +56,7 @@ while(kk>0)
     
     try
         startDate = startCombinationDate(now);
-%         startDate = '2012-01-29';
+        startDate = '2012-01-29';
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         HFRC_err = 1;
@@ -65,7 +65,7 @@ while(kk>0)
     %%
     
     % RADIALS COMBINATION & RADIALS AND TOTALS CONVERSION
-    inputRUV2DB;
+%     inputRUV2DB;
 %     inputCradAscii2DB;
     HFRCombiner;
     

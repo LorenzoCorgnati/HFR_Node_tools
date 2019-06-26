@@ -1,8 +1,7 @@
-%% tot2netCDF_v32.m
+%% tot2netCDF_v31.m
 % This function converts hourly total files combined starting from radial
 % files in netCDF-4 format according to the European common data and metadata
 % model integrating CMEMS-INSTAC and SDC CF extension requirements.
-% v3.2 uses scale_factor and add_offset for packing geophysical variables.
 
 % INPUT:
 %         mat_tot: structure containing radial file in Codar format
@@ -10,44 +9,40 @@
 %                      (metadata)
 %         networkFields: field names of the cell array containing
 %                       information about the network.
-%         stationData: cell array containing information about the station
-%                      (metadata)
+%         stationData: cell array containing information about the contributing 
+%                      stations (metadata)
 %         stationFields: field names of the cell array containing
 %                       information about the station.
+%         timestamp: timestamp of the total file to be converted.
+%         institutions: cell array containing information about all the stations.
+
 
 % OUTPUT:
 %         T2C_err: error flag (0 = correct, 1 = error)
 %         networkData: cell array containing information about the network.
 %                       It is returned in case an update of the database is
 %                       needed.
-%         stationData: cell array containing information about the station.
+%         stationData: cell array containing information about the contributing 
+%                       stations.
 %                       It is returned in case an update of the database is
 %                       needed.
 %         ncFileNoPath: filename of the converted nc file, without the full path
 %         ncFilesize: size of the converted nc file.
-%         timestamp: timestamp of the total file to be converted.
 
 
 % Author: Lorenzo Corgnati
-% Date: May 31, 2019
+% Date: May 14, 2019
 
 % E-mail: lorenzo.corgnati@sp.ismar.cnr.it
 %%
 
-function [T2C_err,networkData,stationData,ncFileNoPath,ncFilesize] = tot2netCDF_v32(mat_tot, networkData, networkFields, stationData, stationFields,timestamp,stationEDMO)
+function [T2C_err,networkData,stationData,ncFileNoPath,ncFilesize] = tot2netCDF_v31(mat_tot, networkData, networkFields, stationData, stationFields,timestamp,institutions)
 
-disp(['[' datestr(now) '] - - ' 'tot2netCDF_v32.m started.']);
+disp(['[' datestr(now) '] - - ' 'tot2netCDF_v31.m started.']);
 
 T2C_err = 0;
 
 warning('off', 'all');
-
-%% Set scale_factor and add_offset values
-
-scaleFactor = 0.001;
-addOffset = 0;
-
-%%
 
 %% Retrieve site codes and coordinates
 
@@ -85,7 +80,7 @@ try
     
     % Find the EDMO_code field from station data
     ST_EDMO_codeIndex = find(not(cellfun('isempty', strfind(stationFields, 'EDMO_code'))));
-    ST_EDMO_code = cell2mat(stationData(:,ST_EDMO_codeIndex));
+    ST_EDMO_code = cell2mat(institutions(:,ST_EDMO_codeIndex));
     ST_EDMO_code = ST_EDMO_code(ST_EDMO_code~=0);
     
     % Build the cumulative EDMO code list
@@ -100,7 +95,7 @@ try
     
     % Find the institution_name field from station data
     ST_DoIndex = find(not(cellfun('isempty', strfind(stationFields, 'institution_name'))));
-    ST_institution_name = stationData(:,ST_DoIndex);
+    ST_institution_name = institutions(:,ST_DoIndex);
     ST_institution_name(cellfun('isempty',ST_institution_name)) = [];
     
     % Build the cumulative institution name list
@@ -120,28 +115,47 @@ try
     ST_last_calibration_dateIndex = find(not(cellfun('isempty', strfind(stationFields, 'last_calibration_date'))));
     ST_last_calibration_date = datenum(stationData(:,ST_last_calibration_dateIndex));
     ST_last_calibration_date = ST_last_calibration_date(ST_last_calibration_date~=0);
-    lastPatternStr = [datestr(max(ST_last_calibration_date), 'yyyy-mm-dd') 'T' datestr(max(ST_last_calibration_date), 'HH:MM:SS') 'Z'];
-        
+    lastPatternStr = [sitesCodes(1,:) ': '];
+    for lcd_idx=2:length(ST_last_calibration_date)
+        lastPatternStr = [lastPatternStr datestr(ST_last_calibration_date(lcd_idx-1), 'yyyy-mm-dd') 'T' datestr(ST_last_calibration_date(lcd_idx-1), 'HH:MM:SS') 'Z; ' sitesCodes(lcd_idx,:) ': '];
+    end
+    lastPatternStr = [lastPatternStr datestr(ST_last_calibration_date(lcd_idx), 'yyyy-mm-dd') 'T' datestr(ST_last_calibration_date(lcd_idx), 'HH:MM:SS') 'Z.'];
+    
     % Find the DoA from station data
     ST_DoAIndex = find(not(cellfun('isempty', strfind(stationFields, 'DoA_estimation_method'))));
     ST_DoA = stationData(:,ST_DoAIndex);
     ST_DoA(cellfun('isempty',ST_DoA)) = [];
-    ST_DoA = uniqueStrCell(ST_DoA);
-    DoAStr = strjoin(ST_DoA,', ');
+%     ST_DoA = uniqueStrCell(ST_DoA);
+%     DoAStr = strjoin(ST_DoA,', ');
+    DoAStr = [sitesCodes(1,:) ': '];
+    for doa_idx=2:length(ST_DoA)
+        DoAStr = [DoAStr ST_DoA{doa_idx} '; ' sitesCodes(doa_idx,:) ': '];
+    end
+    DoAStr = [DoAStr ST_DoA{doa_idx-1} '.'];
     
     % Find the calibration_type from station data
     ST_calibration_typeIndex = find(not(cellfun('isempty', strfind(stationFields, 'calibration_type'))));
     ST_calibration_type = stationData(:,ST_calibration_typeIndex);
     ST_calibration_type(cellfun('isempty',ST_calibration_type)) = [];
-    ST_calibration_type = uniqueStrCell(ST_calibration_type);
-    calibration_typeStr = strjoin(ST_calibration_type,', ');  
+%     ST_calibration_type = uniqueStrCell(ST_calibration_type);
+%     calibration_typeStr = strjoin(ST_calibration_type,', ');  
+    calibration_typeStr = [sitesCodes(1,:) ': '];
+    for ct_idx=2:length(ST_DoA)
+        calibration_typeStr = [calibration_typeStr ST_calibration_type{ct_idx-1} '; ' sitesCodes(ct_idx,:) ': '];
+    end
+    calibration_typeStr = [calibration_typeStr ST_calibration_type{ct_idx} '.'];
     
     % Find the calibration_link from station data
     ST_calibration_linkIndex = find(not(cellfun('isempty', strfind(stationFields, 'calibration_link'))));
     ST_calibration_link = stationData(:,ST_calibration_linkIndex);
     ST_calibration_link(cellfun('isempty',ST_calibration_link)) = [];
-    ST_calibration_link = uniqueStrCell(ST_calibration_link);
-    calibration_linkStr = strjoin(ST_calibration_link,', ');     
+%     ST_calibration_link = uniqueStrCell(ST_calibration_link);
+%     calibration_linkStr = strjoin(ST_calibration_link,', '); 
+    calibration_typeStr = [sitesCodes(1,:) ': '];
+    for ct_idx=2:length(ST_DoA)
+        calibration_typeStr = [calibration_typeStr ST_calibration_type{ct_idx-1} '; ' sitesCodes(ct_idx,:) ': '];
+    end
+    calibration_typeStr = [calibration_typeStr ST_calibration_type{ct_idx} '.'];
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     T2C_err = 1;
@@ -166,15 +180,15 @@ end
 try
     % Prepare variables
     
-    mat_tot.U_grid = NaN.*ones(length(lonGrid),length(latGrid),1);
-    mat_tot.V_grid = NaN.*ones(length(lonGrid),length(latGrid),1);
+    mat_tot.U_grid = netcdf.getConstant('NC_FILL_DOUBLE').*ones(length(lonGrid),length(latGrid),1);
+    mat_tot.V_grid = netcdf.getConstant('NC_FILL_DOUBLE').*ones(length(lonGrid),length(latGrid),1);
     
-    mat_tot.U_std = NaN.*ones(length(lonGrid),length(latGrid),1);
-    mat_tot.V_std = NaN.*ones(length(lonGrid),length(latGrid),1);
+    mat_tot.U_std = netcdf.getConstant('NC_FILL_DOUBLE').*ones(length(lonGrid),length(latGrid),1);
+    mat_tot.V_std = netcdf.getConstant('NC_FILL_DOUBLE').*ones(length(lonGrid),length(latGrid),1);
     
-    mat_tot.covariance = NaN.*ones(length(lonGrid),length(latGrid),1);
+    mat_tot.covariance = netcdf.getConstant('NC_FILL_DOUBLE').*ones(length(lonGrid),length(latGrid),1);
     
-    mat_tot.GDOP = NaN.*ones(length(lonGrid),length(latGrid),1);
+    mat_tot.GDOP = netcdf.getConstant('NC_FILL_DOUBLE').*ones(length(lonGrid),length(latGrid),1);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     T2C_err = 1;
@@ -291,7 +305,7 @@ try
     outputPathIndex = find(not(cellfun('isempty', strfind(networkFields, 'total_HFRnetCDF_folder_path'))));
     network_idIndex = find(not(cellfun('isempty', strfind(networkFields, 'network_id'))));
     networkData{outputPathIndex} = strtrim(networkData{outputPathIndex});
-    [tFB_err, ncFilePath] = totalFolderBuilder_v211(networkData{outputPathIndex}, timestamp);
+    [tFB_err, ncFilePath] = totalFolderBuilder_v21(networkData{outputPathIndex}, timestamp);
     if(tFB_err == 0)
         ncfile = [ncFilePath filesep networkData{network_idIndex} '-Total_' time_str '.nc'];
         ncFileNoPath = [networkData{network_idIndex} '-Total_' time_str '.nc'];
@@ -420,7 +434,7 @@ try
     Total_QC_params.TempDerThr.hour2 = [ncFilePath(1:length(ncFilePath)-length(twoHoursBefore.fP)) twoHoursBefore.fP filesep networkData{network_idIndex} '-Total_' twoHoursBefore.TS '.nc'];
     Total_QC_params.TempDerThr.hour1 = [ncFilePath(1:length(ncFilePath)-length(oneHourBefore.fP)) oneHourBefore.fP filesep networkData{network_idIndex} '-Total_' oneHourBefore.TS '.nc'];
     
-    [overall_QCflag, varianceThreshold_QCflag, temporalDerivativeThreshold_QCflag, GDOP_QCflag, dataDensity_QCflag, velocityThreshold_QCflag] = TotalQCtests_v11(mat_tot, Total_QC_params);
+    [overall_QCflag, varianceThreshold_QCflag, temporalDerivativeThreshold_QCflag, GDOP_QCflag, dataDensity_QCflag, velocityThreshold_QCflag] = TotalQCtests_v10(mat_tot, Total_QC_params);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     T2C_err = 1;
@@ -433,10 +447,9 @@ end
 try
     % Time quality flag
     sdnTime_QCflag = 1;
-    
     % Position quality flag
-    sdnPosition_QCflag = netcdf.getConstant('NC_FILL_BYTE').*int8(ones(length(lonGrid),length(latGrid),1));
-    sdnPosition_QCflag(~isnan(mat_tot.U_grid)) = 1;
+    sdnPosition_QCflag = netcdf.getConstant('NC_FILL_SHORT').*int16(ones(length(lonGrid),length(latGrid),1));
+    sdnPosition_QCflag(mat_tot.U_grid~=netcdf.getConstant('NC_FILL_DOUBLE')) = 1;
     
     % Depth quality flag
     sdnDepth_QCflag = 1;
@@ -451,7 +464,7 @@ end
 try
     nccreate(ncfile,'TIME',...
         'Dimensions',{'TIME',time_dim},...
-        'Datatype','double',...
+        'Datatype','single',...
         'Format',ncfmt);
     
     nccreate(ncfile,'LATITUDE',...
@@ -505,122 +518,122 @@ try
     
     nccreate(ncfile,'EWCT',...
         'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
-        'Datatype','int16',...
-        'FillValue', netcdf.getConstant('NC_FILL_SHORT'),...
+        'Datatype','double',...
+        'FillValue', netcdf.getConstant('NC_FILL_DOUBLE'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'NSCT',...
         'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
-        'Datatype','int16',...
-        'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
+        'Datatype','double',...
+        'FillValue',netcdf.getConstant('NC_FILL_DOUBLE'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'EWCS',...
         'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
-        'Datatype','int16',...
-        'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
+        'Datatype','double',...
+        'FillValue',netcdf.getConstant('NC_FILL_DOUBLE'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'NSCS',...
         'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
-        'Datatype','int16',...
-        'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
+        'Datatype','double',...
+        'FillValue',netcdf.getConstant('NC_FILL_DOUBLE'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'CCOV',...
         'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
-        'Datatype','int32',...
-        'FillValue',netcdf.getConstant('NC_FILL_INT'),...
+        'Datatype','double',...
+        'FillValue',netcdf.getConstant('NC_FILL_DOUBLE'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'GDOP',...
+        'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
+        'Datatype','double',...
+        'FillValue',netcdf.getConstant('NC_FILL_DOUBLE'),...
+        'Format',ncfmt);
+    
+    nccreate(ncfile,'TIME_SEADATANET_QC',...
+        'Dimensions',{'TIME',time_dim},...
+        'Datatype','int16',...
+        'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
+        'Format',ncfmt);
+    
+    nccreate(ncfile,'POSITION_SEADATANET_QC',...
         'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
         'Datatype','int16',...
         'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
         'Format',ncfmt);
     
-    nccreate(ncfile,'TIME_SEADATANET_QC',...
-        'Dimensions',{'TIME',time_dim},...
-        'Datatype','int8',...
-        'FillValue',netcdf.getConstant('NC_FILL_BYTE'),...
-        'Format',ncfmt);
-    
-    nccreate(ncfile,'POSITION_SEADATANET_QC',...
-        'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
-        'Datatype','int8',...
-        'FillValue',netcdf.getConstant('NC_FILL_BYTE'),...
-        'Format',ncfmt);
-    
     nccreate(ncfile,'DEPTH_SEADATANET_QC',...
         'Dimensions',{'TIME',time_dim},...
-        'Datatype','int8',...
-        'FillValue',netcdf.getConstant('NC_FILL_BYTE'),...
+        'Datatype','int16',...
+        'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'QCflag',...
         'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
-        'Datatype','int8',...
-        'FillValue',netcdf.getConstant('NC_FILL_BYTE'),...
+        'Datatype','int16',...
+        'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'VART_QC',...
         'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
-        'Datatype','int8',...
-        'FillValue',netcdf.getConstant('NC_FILL_BYTE'),...
+        'Datatype','int16',...
+        'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'GDOP_QC',...
         'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
-        'Datatype','int8',...
-        'FillValue',netcdf.getConstant('NC_FILL_BYTE'),...
+        'Datatype','int16',...
+        'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'DDNS_QC',...
         'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
-        'Datatype','int8',...
-        'FillValue',netcdf.getConstant('NC_FILL_BYTE'),...
+        'Datatype','int16',...
+        'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'CSPD_QC',...
         'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPH', depth_dim, 'TIME',time_dim},...
-        'Datatype','int8',...
-        'FillValue',netcdf.getConstant('NC_FILL_BYTE'),...
+        'Datatype','int16',...
+        'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'NARX',...
         'Dimensions',{'TIME',time_dim},...
-        'Datatype','int8',...
-        'FillValue',netcdf.getConstant('NC_FILL_BYTE'),...
+        'Datatype','int16',...
+        'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'NATX',...
         'Dimensions',{'TIME',time_dim},...
-        'Datatype','int8',...
-        'FillValue',netcdf.getConstant('NC_FILL_BYTE'),...
+        'Datatype','int16',...
+        'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'SLTR',...
         'Dimensions',{'MAXSITE',maxSite_dim,'TIME',time_dim},...
-        'Datatype','int32',...
-        'FillValue',netcdf.getConstant('NC_FILL_INT'),...
+        'Datatype','single',...
+        'FillValue',netcdf.getConstant('NC_FILL_FLOAT'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'SLNR',...
         'Dimensions',{'MAXSITE',maxSite_dim,'TIME',time_dim},...
-        'Datatype','int32',...
-        'FillValue',netcdf.getConstant('NC_FILL_INT'),...
+        'Datatype','single',...
+        'FillValue',netcdf.getConstant('NC_FILL_FLOAT'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'SLTT',...
         'Dimensions',{'MAXSITE',maxSite_dim,'TIME',time_dim},...
-        'Datatype','int32',...
-        'FillValue',netcdf.getConstant('NC_FILL_INT'),...
+        'Datatype','single',...
+        'FillValue',netcdf.getConstant('NC_FILL_FLOAT'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'SLNT',...
         'Dimensions',{'MAXSITE',maxSite_dim,'TIME',time_dim},...
-        'Datatype','int32',...
-        'FillValue',netcdf.getConstant('NC_FILL_INT'),...
+        'Datatype','single',...
+        'FillValue',netcdf.getConstant('NC_FILL_FLOAT'),...
         'Format',ncfmt);
     
     nccreate(ncfile,'SCDR',...
@@ -636,10 +649,10 @@ try
         'Format',ncfmt);
     
     %% Creates attributes for the variables
-    ncwriteatt(ncfile,'TIME','long_name',char('Time'));
+    ncwriteatt(ncfile,'TIME','long_name',char('Time of measurement UTC'));
     ncwriteatt(ncfile,'TIME','standard_name',char('time'));
     ncwriteatt(ncfile,'TIME','units',char(time_units));
-    ncwriteatt(ncfile,'TIME','calendar',char('Gregorian'));
+    ncwriteatt(ncfile,'TIME','calendar',char('Julian'));
     ncwriteatt(ncfile,'TIME','axis',char('T'));
     ncwriteatt(ncfile,'TIME','sdn_parameter_name',char('Elapsed time (since 1950-01-01T00:00:00Z)'));
     ncwriteatt(ncfile,'TIME','sdn_parameter_urn',char('SDN:P01::ELTJLD01'));
@@ -647,9 +660,9 @@ try
     ncwriteatt(ncfile,'TIME','sdn_uom_urn',char('SDN:P06::UTAA'));
     ncwriteatt(ncfile,'TIME','ancillary_variables',char('TIME_SEADATANET_QC'));
     
-    ncwriteatt(ncfile,'LATITUDE','long_name',char('Latitude of each location'));
+    ncwriteatt(ncfile,'LATITUDE','long_name',char('Latitude'));
     ncwriteatt(ncfile,'LATITUDE','standard_name',char('latitude'));
-    ncwriteatt(ncfile,'LATITUDE','units',char('degree_north'));
+    ncwriteatt(ncfile,'LATITUDE','units',char('degrees_north'));
     ncwriteatt(ncfile,'LATITUDE','axis',char('Y'));
     ncwriteatt(ncfile,'LATITUDE','sdn_parameter_name',char('Latitude north'));
     ncwriteatt(ncfile,'LATITUDE','sdn_parameter_urn',char('SDN:P01::ALATZZ01'));
@@ -658,9 +671,9 @@ try
     ncwriteatt(ncfile,'LATITUDE','grid_mapping',char('crs'));
     ncwriteatt(ncfile,'LATITUDE','ancillary_variables',char('POSITION_SEADATANET_QC'));
     
-    ncwriteatt(ncfile,'LONGITUDE','long_name',char('Longitude of each location'));
+    ncwriteatt(ncfile,'LONGITUDE','long_name',char('Longitude'));
     ncwriteatt(ncfile,'LONGITUDE','standard_name',char('longitude'));
-    ncwriteatt(ncfile,'LONGITUDE','units',char('degree_east'));
+    ncwriteatt(ncfile,'LONGITUDE','units',char('degrees_east'));
     ncwriteatt(ncfile,'LONGITUDE','axis',char('X'));
     ncwriteatt(ncfile,'LONGITUDE','sdn_parameter_name',char('Longitude east'));
     ncwriteatt(ncfile,'LONGITUDE','sdn_parameter_urn',char('SDN:P01::ALONZZ01'));
@@ -700,11 +713,11 @@ try
     ncwriteatt(ncfile,'DEPH','sdn_uom_urn',char('SDN:P06::ULAA'));
     ncwriteatt(ncfile,'DEPH','ancillary_variables',char('DEPTH_SEADATANET_QC'));
     
-    ncwriteatt(ncfile,'EWCT','long_name',char('West-east current component'));
-    ncwriteatt(ncfile,'EWCT','standard_name',char('eastward_sea_water_velocity'));
+    ncwriteatt(ncfile,'EWCT','long_name',char('Surface Eastward Sea Water Velocity'));
+    ncwriteatt(ncfile,'EWCT','standard_name',char('surface_eastward_sea_water_velocity'));
     ncwriteatt(ncfile,'EWCT','units',char('m s-1'));
-    ncwriteatt(ncfile,'EWCT','scale_factor',double(scaleFactor));
-    ncwriteatt(ncfile,'EWCT','add_offset',double(addOffset));
+    ncwriteatt(ncfile,'EWCT','scale_factor',double(1));
+    ncwriteatt(ncfile,'EWCT','add_offset',double(0));
     ncwriteatt(ncfile,'EWCT','ioos_category',char('Currents'));
     ncwriteatt(ncfile,'EWCT','coordsys',char('geographic'));
     ncwriteatt(ncfile,'EWCT','sdn_parameter_name',char('Eastward current velocity in the water body'));
@@ -713,16 +726,16 @@ try
     ncwriteatt(ncfile,'EWCT','sdn_uom_urn',char('SDN:P06::UVAA'));
     ncwriteatt(ncfile,'EWCT','coordinates',char('TIME DEPH LATITUDE LONGITUDE'));
     %        ncwriteatt(ncfile,'EWCT','cell_methods',char('time: mean over hours time'));
-    ncwriteatt(ncfile,'EWCT','valid_range',int16([(-10-addOffset)./scaleFactor, (10-addOffset)./scaleFactor]));
+    ncwriteatt(ncfile,'EWCT','valid_range',[double(-10.0),double(10.0)]);
     %         ncwriteatt(ncfile,'EWCT','valid_min',double(-10.0));
     %         ncwriteatt(ncfile,'EWCT','valid_max',double(10.0));
     ncwriteatt(ncfile,'EWCT','ancillary_variables',char('QCflag, VART_QC, CSPD_QC, DDNS_QC, GDOP_QC'));
     
-    ncwriteatt(ncfile,'NSCT','long_name',char('South-north current component'));
-    ncwriteatt(ncfile,'NSCT','standard_name',char('northward_sea_water_velocity'));
+    ncwriteatt(ncfile,'NSCT','long_name',char('Surface Northward Sea Water Velocity'));
+    ncwriteatt(ncfile,'NSCT','standard_name',char('surface_northward_sea_water_velocity'));
     ncwriteatt(ncfile,'NSCT','units',char('m s-1'));
-    ncwriteatt(ncfile,'NSCT','scale_factor',double(scaleFactor));
-    ncwriteatt(ncfile,'NSCT','add_offset',double(addOffset));
+    ncwriteatt(ncfile,'NSCT','scale_factor',double(1));
+    ncwriteatt(ncfile,'NSCT','add_offset',double(0));
     ncwriteatt(ncfile,'NSCT','ioos_category',char('Currents'));
     ncwriteatt(ncfile,'NSCT','coordsys',char('geographic'));
     ncwriteatt(ncfile,'NSCT','sdn_parameter_name',char('Northward current velocity in the water body'));
@@ -731,7 +744,7 @@ try
     ncwriteatt(ncfile,'NSCT','sdn_uom_urn',char('SDN:P06::UVAA'));
     ncwriteatt(ncfile,'NSCT','coordinates',char('TIME DEPH LATITUDE LONGITUDE'));
     %        ncwriteatt(ncfile,'NSCT','cell_methods',char('time: mean over hours time'));
-    ncwriteatt(ncfile,'NSCT','valid_range',int16([(-10-addOffset)./scaleFactor, (10-addOffset)./scaleFactor]));
+    ncwriteatt(ncfile,'NSCT','valid_range',[double(-10.0),double(10.0)]);
     %         ncwriteatt(ncfile,'NSCT','valid_min',double(-10.0));
     %         ncwriteatt(ncfile,'NSCT','valid_max',double(10.0));
     ncwriteatt(ncfile,'NSCT','ancillary_variables',char('QCflag, VART_QC, CSPD_QC, DDNS_QC, GDOP_QC'));
@@ -739,12 +752,12 @@ try
     ncwriteatt(ncfile,'EWCS','long_name',char('Standard Deviation of Surface Eastward Sea Water Velocity'));
     %        ncwriteatt(ncfile,'EWCS','standard_name',char('surface_eastward_sea_water_velocity_standard_error'));
     ncwriteatt(ncfile,'EWCS','units',char('m s-1'));
-    ncwriteatt(ncfile,'EWCS','valid_range',int16([(-10-addOffset)./scaleFactor, (10-addOffset)./scaleFactor]));
+    ncwriteatt(ncfile,'EWCS','valid_range',[double(-10.0),double(10.0)]);
     ncwriteatt(ncfile,'EWCS','coordinates',char('TIME DEPH LATITUDE LONGITUDE'));
     %         ncwriteatt(ncfile,'EWCS','valid_min',double(-10.0));
     %         ncwriteatt(ncfile,'EWCS','valid_max',double(10.0));
-    ncwriteatt(ncfile,'EWCS','scale_factor',double(scaleFactor));
-    ncwriteatt(ncfile,'EWCS','add_offset',double(addOffset));
+    ncwriteatt(ncfile,'EWCS','scale_factor',double(1));
+    ncwriteatt(ncfile,'EWCS','add_offset',double(0));
     ncwriteatt(ncfile,'EWCS','sdn_parameter_name',char('Eastward current velocity standard deviation in the water body'));
     ncwriteatt(ncfile,'EWCS','sdn_parameter_urn',char('SDN:P01::SDEWZZZZ'));
     ncwriteatt(ncfile,'EWCS','sdn_uom_name',char('Metres per second'));
@@ -754,12 +767,12 @@ try
     ncwriteatt(ncfile,'NSCS','long_name',char('Standard Deviation of Surface Northward Sea Water Velocity'));
     %        ncwriteatt(ncfile,'NSCS','standard_name',char('surface_northward_sea_water_velocity_standard_error'));
     ncwriteatt(ncfile,'NSCS','units',char('m s-1'));
-    ncwriteatt(ncfile,'NSCS','valid_range',int16([(-10-addOffset)./scaleFactor, (10-addOffset)./scaleFactor]));
+    ncwriteatt(ncfile,'NSCS','valid_range',[double(-10.0),double(10.0)]);
     ncwriteatt(ncfile,'NSCS','coordinates',char('TIME DEPH LATITUDE LONGITUDE'));
     %         ncwriteatt(ncfile,'NSCS','valid_min',double(-10.0));
     %         ncwriteatt(ncfile,'NSCS','valid_max',double(10.0));
-    ncwriteatt(ncfile,'NSCS','scale_factor',double(scaleFactor));
-    ncwriteatt(ncfile,'NSCS','add_offset',double(addOffset));
+    ncwriteatt(ncfile,'NSCS','scale_factor',double(1));
+    ncwriteatt(ncfile,'NSCS','add_offset',double(0));
     ncwriteatt(ncfile,'NSCS','sdn_parameter_name',char('Northward current velocity standard deviation in the water body'));
     ncwriteatt(ncfile,'NSCS','sdn_parameter_urn',char('SDN:P01::SDNSZZZZ'));
     ncwriteatt(ncfile,'NSCS','sdn_uom_name',char('Metres per second'));
@@ -769,12 +782,12 @@ try
     ncwriteatt(ncfile,'CCOV','long_name',char('Covariance of Surface Sea Water Velocity'));
     %         ncwriteatt(ncfile,'CCOV','standard_name',char('surface_sea_water_velocity_covariance'));
     ncwriteatt(ncfile,'CCOV','units',char('m2 s-2'));
-    ncwriteatt(ncfile,'CCOV','valid_range',int32([(-10-addOffset)./(scaleFactor^2), (10-addOffset)./(scaleFactor^2)]));
+    ncwriteatt(ncfile,'CCOV','valid_range',[double(-10.0),double(10.0)]);
     ncwriteatt(ncfile,'CCOV','coordinates',char('TIME DEPH LATITUDE LONGITUDE'));
     %         ncwriteatt(ncfile,'CCOV','valid_min',double(-10.0));
     %         ncwriteatt(ncfile,'CCOV','valid_max',double(10.0));
-    ncwriteatt(ncfile,'CCOV','scale_factor',double(scaleFactor^2));
-    ncwriteatt(ncfile,'CCOV','add_offset',double(addOffset));
+    ncwriteatt(ncfile,'CCOV','scale_factor',double(1));
+    ncwriteatt(ncfile,'CCOV','add_offset',double(0));
     ncwriteatt(ncfile,'CCOV','sdn_parameter_name',char(''));
     ncwriteatt(ncfile,'CCOV','sdn_parameter_urn',char(''));
     ncwriteatt(ncfile,'CCOV','sdn_uom_name',char('Square metres per second squared'));
@@ -784,12 +797,12 @@ try
     ncwriteatt(ncfile,'GDOP','long_name',char('Geometrical Dilution Of Precision'));
     %         ncwriteatt(ncfile,'GDOP','standard_name',char('gdop'));
     ncwriteatt(ncfile,'GDOP','units',char('1'));
-    ncwriteatt(ncfile,'GDOP','valid_range',int16([(-20-addOffset)./scaleFactor, (20-addOffset)./scaleFactor]));
+    ncwriteatt(ncfile,'GDOP','valid_range',[double(-20.0),double(20.0)]);
     ncwriteatt(ncfile,'GDOP','coordinates',char('TIME DEPH LATITUDE LONGITUDE'));
     %         ncwriteatt(ncfile,'GDOP','valid_min',double(-20.0));
     %         ncwriteatt(ncfile,'GDOP','valid_max',double(20.0));
-    ncwriteatt(ncfile,'GDOP','scale_factor',double(scaleFactor));
-    ncwriteatt(ncfile,'GDOP','add_offset',double(addOffset));
+    ncwriteatt(ncfile,'GDOP','scale_factor',double(1));
+    ncwriteatt(ncfile,'GDOP','add_offset',double(0));
     ncwriteatt(ncfile,'GDOP','comment',char(['The Geometric Dilution of Precision (GDOP) is the coefficient of the uncertainty, which relates the uncertainties in radial and velocity vectors.' ...
         ' The GDOP is a unit-less coefficient, which characterizes the effect that radar station geometry has on the measurement and position determination errors.' ...
         ' A low GDOP corresponds to an optimal geometric configuration of radar stations, and results in accurate surface current data. Essentially, GDOP is a quantitative way to relate the radial and velocity vector uncertainties.'...
@@ -803,87 +816,87 @@ try
     
     ncwriteatt(ncfile,'TIME_SEADATANET_QC','long_name',char('Time SeaDataNet Quality Flag'));
     ncwriteatt(ncfile,'TIME_SEADATANET_QC','units',char('1'));
-    ncwriteatt(ncfile,'TIME_SEADATANET_QC','valid_range',int8([0 9]));
-    ncwriteatt(ncfile,'TIME_SEADATANET_QC','flag_values',int8([0 1 2 3 4 7 8 9]));
+    ncwriteatt(ncfile,'TIME_SEADATANET_QC','valid_range',int16([0 9]));
+    ncwriteatt(ncfile,'TIME_SEADATANET_QC','flag_values',int16([0 1 2 3 4 7 8 9]));
     ncwriteatt(ncfile,'TIME_SEADATANET_QC','flag_meanings',char('unknown good_data probably_good_data potentially_correctable_bad_data bad_data nominal_value interpolated_value missing_value'));
     ncwriteatt(ncfile,'TIME_SEADATANET_QC','comment',char('OceanSITES quality flagging for temporal coordinate.'));
-    ncwriteatt(ncfile,'TIME_SEADATANET_QC','scale_factor',int8(1));
-    ncwriteatt(ncfile,'TIME_SEADATANET_QC','add_offset',int8(0));
+    ncwriteatt(ncfile,'TIME_SEADATANET_QC','scale_factor',int16(1));
+    ncwriteatt(ncfile,'TIME_SEADATANET_QC','add_offset',int16(0));
     
     ncwriteatt(ncfile,'POSITION_SEADATANET_QC','long_name',char('Position SeaDataNet Quality Flags'));
     ncwriteatt(ncfile,'POSITION_SEADATANET_QC','units',char('1'));
-    ncwriteatt(ncfile,'POSITION_SEADATANET_QC','valid_range',int8([0 9]));
-    ncwriteatt(ncfile,'POSITION_SEADATANET_QC','flag_values',int8([0 1 2 3 4 7 8 9]));
+    ncwriteatt(ncfile,'POSITION_SEADATANET_QC','valid_range',int16([0 9]));
+    ncwriteatt(ncfile,'POSITION_SEADATANET_QC','flag_values',int16([0 1 2 3 4 7 8 9]));
     ncwriteatt(ncfile,'POSITION_SEADATANET_QC','flag_meanings',char('unknown good_data probably_good_data potentially_correctable_bad_data bad_data nominal_value interpolated_value missing_value'));
     ncwriteatt(ncfile,'POSITION_SEADATANET_QC','comment',char('OceanSITES quality flagging for position coordinates.'));
-    ncwriteatt(ncfile,'POSITION_SEADATANET_QC','scale_factor',int8(1));
-    ncwriteatt(ncfile,'POSITION_SEADATANET_QC','add_offset',int8(0));
+    ncwriteatt(ncfile,'POSITION_SEADATANET_QC','scale_factor',int16(1));
+    ncwriteatt(ncfile,'POSITION_SEADATANET_QC','add_offset',int16(0));
     
     ncwriteatt(ncfile,'DEPTH_SEADATANET_QC','long_name',char('Depth SeaDataNet Quality Flag'));
     ncwriteatt(ncfile,'DEPTH_SEADATANET_QC','units',char('1'));
-    ncwriteatt(ncfile,'DEPTH_SEADATANET_QC','valid_range',int8([0 9]));
-    ncwriteatt(ncfile,'DEPTH_SEADATANET_QC','flag_values',int8([0 1 2 3 4 7 8 9]));
+    ncwriteatt(ncfile,'DEPTH_SEADATANET_QC','valid_range',int16([0 9]));
+    ncwriteatt(ncfile,'DEPTH_SEADATANET_QC','flag_values',int16([0 1 2 3 4 7 8 9]));
     ncwriteatt(ncfile,'DEPTH_SEADATANET_QC','flag_meanings',char('unknown good_data probably_good_data potentially_correctable_bad_data bad_data nominal_value interpolated_value missing_value'));
     ncwriteatt(ncfile,'DEPTH_SEADATANET_QC','comment',char('OceanSITES quality flagging for depth coordinate.'));
-    ncwriteatt(ncfile,'DEPTH_SEADATANET_QC','scale_factor',int8(1));
-    ncwriteatt(ncfile,'DEPTH_SEADATANET_QC','add_offset',int8(0));
+    ncwriteatt(ncfile,'DEPTH_SEADATANET_QC','scale_factor',int16(1));
+    ncwriteatt(ncfile,'DEPTH_SEADATANET_QC','add_offset',int16(0));
     
     ncwriteatt(ncfile,'QCflag','long_name',char('Overall Quality Flags'));
     ncwriteatt(ncfile,'QCflag','units',char('1'));
-    ncwriteatt(ncfile,'QCflag','valid_range',int8([0 9]));
-    ncwriteatt(ncfile,'QCflag','flag_values',int8([0 1 2 3 4 7 8 9]));
+    ncwriteatt(ncfile,'QCflag','valid_range',int16([0 9]));
+    ncwriteatt(ncfile,'QCflag','flag_values',int16([0 1 2 3 4 7 8 9]));
     ncwriteatt(ncfile,'QCflag','flag_meanings',char('unknown good_data probably_good_data potentially_correctable_bad_data bad_data nominal_value interpolated_value missing_value'));
     ncwriteatt(ncfile,'QCflag','comment',char('OceanSITES quality flagging for all QC tests.'));
-    ncwriteatt(ncfile,'QCflag','scale_factor',int8(1));
-    ncwriteatt(ncfile,'QCflag','add_offset',int8(0));
+    ncwriteatt(ncfile,'QCflag','scale_factor',int16(1));
+    ncwriteatt(ncfile,'QCflag','add_offset',int16(0));
     
     ncwriteatt(ncfile,'VART_QC','long_name',char('Variance Threshold Quality Flags'));
     ncwriteatt(ncfile,'VART_QC','units',char('1'));
-    ncwriteatt(ncfile,'VART_QC','valid_range',int8([0 9]));
-    ncwriteatt(ncfile,'VART_QC','flag_values',int8([0 1 2 3 4 7 8 9]));
+    ncwriteatt(ncfile,'VART_QC','valid_range',int16([0 9]));
+    ncwriteatt(ncfile,'VART_QC','flag_values',int16([0 1 2 3 4 7 8 9]));
     ncwriteatt(ncfile,'VART_QC','flag_meanings',char('unknown good_data probably_good_data potentially_correctable_bad_data bad_data nominal_value interpolated_value missing_value'));
     ncwriteatt(ncfile,'VART_QC','comment',char(['OceanSITES quality flagging for variance threshold QC test. ' ...
         'Test not applicable to Direction Finding systems. The Temporal Derivative test is applied.' ...
         'Threshold set to ' num2str(Total_QC_params.TempDerThr.threshold) ' m/s. ']));
-    ncwriteatt(ncfile,'VART_QC','scale_factor',int8(1));
-    ncwriteatt(ncfile,'VART_QC','add_offset',int8(0));
+    ncwriteatt(ncfile,'VART_QC','scale_factor',int16(1));
+    ncwriteatt(ncfile,'VART_QC','add_offset',int16(0));
     
     ncwriteatt(ncfile,'GDOP_QC','long_name',char('GDOP Threshold Quality Flags'));
     ncwriteatt(ncfile,'GDOP_QC','units',char('1'));
-    ncwriteatt(ncfile,'GDOP_QC','valid_range',int8([0 9]));
-    ncwriteatt(ncfile,'GDOP_QC','flag_values',int8([0 1 2 3 4 7 8 9]));
+    ncwriteatt(ncfile,'GDOP_QC','valid_range',int16([0 9]));
+    ncwriteatt(ncfile,'GDOP_QC','flag_values',int16([0 1 2 3 4 7 8 9]));
     ncwriteatt(ncfile,'GDOP_QC','flag_meanings',char('unknown good_data probably_good_data potentially_correctable_bad_data bad_data nominal_value interpolated_value missing_value'));
     ncwriteatt(ncfile,'GDOP_QC','comment',char(['OceanSITES quality flagging for GDOP threshold QC test. ' ...
         'Threshold set to ' num2str(Total_QC_params.GDOPThr) '.']));
-    ncwriteatt(ncfile,'GDOP_QC','scale_factor',int8(1));
-    ncwriteatt(ncfile,'GDOP_QC','add_offset',int8(0));
+    ncwriteatt(ncfile,'GDOP_QC','scale_factor',int16(1));
+    ncwriteatt(ncfile,'GDOP_QC','add_offset',int16(0));
     
     ncwriteatt(ncfile,'DDNS_QC','long_name',char('Data Density Threshold Quality Flags'));
     ncwriteatt(ncfile,'DDNS_QC','units',char('1'));
-    ncwriteatt(ncfile,'DDNS_QC','valid_range',int8([0 9]));
-    ncwriteatt(ncfile,'DDNS_QC','flag_values',int8([0 1 2 3 4 7 8 9]));
+    ncwriteatt(ncfile,'DDNS_QC','valid_range',int16([0 9]));
+    ncwriteatt(ncfile,'DDNS_QC','flag_values',int16([0 1 2 3 4 7 8 9]));
     ncwriteatt(ncfile,'DDNS_QC','flag_meanings',char('unknown good_data probably_good_data potentially_correctable_bad_data bad_data nominal_value interpolated_value missing_value'));
     ncwriteatt(ncfile,'DDNS_QC','comment',char(['OceanSITES quality flagging for Data density threshold QC test. ' ...
         'Threshold set to ' num2str(Total_QC_params.DataDensityThr) ' radials.']));
-    ncwriteatt(ncfile,'DDNS_QC','scale_factor',int8(1));
-    ncwriteatt(ncfile,'DDNS_QC','add_offset',int8(0));
+    ncwriteatt(ncfile,'DDNS_QC','scale_factor',int16(1));
+    ncwriteatt(ncfile,'DDNS_QC','add_offset',int16(0));
     
     ncwriteatt(ncfile,'CSPD_QC','long_name',char('Velocity Threshold Quality Flags'));
     ncwriteatt(ncfile,'CSPD_QC','units',char('1'));
-    ncwriteatt(ncfile,'CSPD_QC','valid_range',int8([0 9]));
-    ncwriteatt(ncfile,'CSPD_QC','flag_values',int8([0 1 2 3 4 7 8 9]));
+    ncwriteatt(ncfile,'CSPD_QC','valid_range',int16([0 9]));
+    ncwriteatt(ncfile,'CSPD_QC','flag_values',int16([0 1 2 3 4 7 8 9]));
     ncwriteatt(ncfile,'CSPD_QC','flag_meanings',char('unknown good_data probably_good_data potentially_correctable_bad_data bad_data nominal_value interpolated_value missing_value'));
     ncwriteatt(ncfile,'CSPD_QC','comment',char(['OceanSITES quality flagging for Velocity threshold QC test. ' ...
         'Threshold set to ' num2str(Total_QC_params.VelThr) ' m/s.']));
-    ncwriteatt(ncfile,'CSPD_QC','scale_factor',int8(1));
-    ncwriteatt(ncfile,'CSPD_QC','add_offset',int8(0));
+    ncwriteatt(ncfile,'CSPD_QC','scale_factor',int16(1));
+    ncwriteatt(ncfile,'CSPD_QC','add_offset',int16(0));
     
     ncwriteatt(ncfile,'NARX','long_name',char('Number of Receive Antennas'));
     ncwriteatt(ncfile,'NARX','units',char('1'));
-    ncwriteatt(ncfile,'NARX','valid_range',int8([0 maxSite_dim]));
+    ncwriteatt(ncfile,'NARX','valid_range',int16([0 maxSite_dim]));
     %         ncwriteatt(ncfile,'NARX','coordinates',char('TIME'));
-    ncwriteatt(ncfile,'NARX','scale_factor',int8(1));
-    ncwriteatt(ncfile,'NARX','add_offset',int8(0));
+    ncwriteatt(ncfile,'NARX','scale_factor',int16(1));
+    ncwriteatt(ncfile,'NARX','add_offset',int16(0));
     ncwriteatt(ncfile,'NARX','sdn_parameter_name',char(''));
     ncwriteatt(ncfile,'NARX','sdn_parameter_urn',char(''));
     ncwriteatt(ncfile,'NARX','sdn_uom_name',char('Dimensionless'));
@@ -891,10 +904,10 @@ try
     
     ncwriteatt(ncfile,'NATX','long_name',char('Number of Transmit Antennas'));
     ncwriteatt(ncfile,'NATX','units',char('1'));
-    ncwriteatt(ncfile,'NATX','valid_range',int8([0 maxSite_dim]));
+    ncwriteatt(ncfile,'NATX','valid_range',int16([0 maxSite_dim]));
     %         ncwriteatt(ncfile,'NATX','coordinates',char('TIME'));
-    ncwriteatt(ncfile,'NATX','scale_factor',int8(1));
-    ncwriteatt(ncfile,'NATX','add_offset',int8(0));
+    ncwriteatt(ncfile,'NATX','scale_factor',int16(1));
+    ncwriteatt(ncfile,'NATX','add_offset',int16(0));
     ncwriteatt(ncfile,'NATX','sdn_parameter_name',char(''));
     ncwriteatt(ncfile,'NATX','sdn_parameter_urn',char(''));
     ncwriteatt(ncfile,'NATX','sdn_uom_name',char('Dimensionless'));
@@ -903,10 +916,10 @@ try
     ncwriteatt(ncfile,'SLTR','long_name',char('Receive Antenna Latitudes'));
     ncwriteatt(ncfile,'SLTR','standard_name',char('latitude'));
     ncwriteatt(ncfile,'SLTR','units','degrees_north');
-    ncwriteatt(ncfile,'SLTR','valid_range',int32( [(-90-addOffset)./scaleFactor (90-addOffset)./scaleFactor] ));
+    ncwriteatt(ncfile,'SLTR','valid_range',single([-90 90]));
     ncwriteatt(ncfile,'SLTR','coordinates',char('TIME MAXSITE'));
-    ncwriteatt(ncfile,'SLTR','scale_factor',single(scaleFactor));
-    ncwriteatt(ncfile,'SLTR','add_offset',single(addOffset));
+    ncwriteatt(ncfile,'SLTR','scale_factor',single(1));
+    ncwriteatt(ncfile,'SLTR','add_offset',single(0));
     ncwriteatt(ncfile,'SLTR','sdn_parameter_name',char('Latitude north'));
     ncwriteatt(ncfile,'SLTR','sdn_parameter_urn',char('SDN:P01::ALATZZ01'));
     ncwriteatt(ncfile,'SLTR','sdn_uom_name',char('Degrees north'));
@@ -915,10 +928,10 @@ try
     ncwriteatt(ncfile,'SLNR','long_name',char('Receive Antenna Longitudes'));
     ncwriteatt(ncfile,'SLNR','standard_name',char('longitude'));
     ncwriteatt(ncfile,'SLNR','units','degrees_east');
-    ncwriteatt(ncfile,'SLNR','valid_range',int32( [(-180-addOffset)./scaleFactor (180-addOffset)./scaleFactor] ));
+    ncwriteatt(ncfile,'SLNR','valid_range',single([-180 180]));
     ncwriteatt(ncfile,'SLNR','coordinates',char('TIME MAXSITE'));
-    ncwriteatt(ncfile,'SLNR','scale_factor',single(scaleFactor));
-    ncwriteatt(ncfile,'SLNR','add_offset',single(addOffset));
+    ncwriteatt(ncfile,'SLNR','scale_factor',single(1));
+    ncwriteatt(ncfile,'SLNR','add_offset',single(0));
     ncwriteatt(ncfile,'SLNR','sdn_parameter_name',char('Longitude east'));
     ncwriteatt(ncfile,'SLNR','sdn_parameter_urn',char('SDN:P01::ALONZZ01'));
     ncwriteatt(ncfile,'SLNR','sdn_uom_name',char('Degrees east'));
@@ -927,10 +940,10 @@ try
     ncwriteatt(ncfile,'SLTT','long_name',char('Transmit Antenna Latitudes'));
     ncwriteatt(ncfile,'SLTT','standard_name',char('latitude'));
     ncwriteatt(ncfile,'SLTT','units','degrees_north');
-    ncwriteatt(ncfile,'SLTT','valid_range',int32( [(-90-addOffset)./scaleFactor (90-addOffset)./scaleFactor] ));
+    ncwriteatt(ncfile,'SLTT','valid_range',single([-90 90]));
     ncwriteatt(ncfile,'SLTT','coordinates',char('TIME MAXSITE'));
-    ncwriteatt(ncfile,'SLTT','scale_factor',single(scaleFactor));
-    ncwriteatt(ncfile,'SLTT','add_offset',single(addOffset));
+    ncwriteatt(ncfile,'SLTT','scale_factor',single(1));
+    ncwriteatt(ncfile,'SLTT','add_offset',single(0));
     ncwriteatt(ncfile,'SLTT','sdn_parameter_name',char('Latitude north'));
     ncwriteatt(ncfile,'SLTT','sdn_parameter_urn',char('SDN:P01::ALATZZ01'));
     ncwriteatt(ncfile,'SLTT','sdn_uom_name',char('Degrees north'));
@@ -939,10 +952,10 @@ try
     ncwriteatt(ncfile,'SLNT','long_name',char('Transmit Antenna Longitudes'));
     ncwriteatt(ncfile,'SLNT','standard_name',char('longitude'));
     ncwriteatt(ncfile,'SLNT','units','degrees_east');
-    ncwriteatt(ncfile,'SLNT','valid_range',int32( [(-180-addOffset)./scaleFactor (180-addOffset)./scaleFactor] ));
+    ncwriteatt(ncfile,'SLNT','valid_range',single([-180 180]));
     ncwriteatt(ncfile,'SLNT','coordinates',char('TIME MAXSITE'));
-    ncwriteatt(ncfile,'SLNT','scale_factor',single(scaleFactor));
-    ncwriteatt(ncfile,'SLNT','add_offset',single(addOffset));
+    ncwriteatt(ncfile,'SLNT','scale_factor',single(1));
+    ncwriteatt(ncfile,'SLNT','add_offset',single(0));
     ncwriteatt(ncfile,'SLNT','sdn_parameter_name',char('Longitude east'));
     ncwriteatt(ncfile,'SLNT','sdn_parameter_urn',char('SDN:P01::ALONZZ01'));
     ncwriteatt(ncfile,'SLNT','sdn_uom_name',char('Degrees east'));
@@ -966,7 +979,7 @@ try
     
     %% Writes values in variables
     %         ncwrite(ncfile,'TIME',int32((mat_tot.TimeStamp-timeref)*86400));
-    ncwrite(ncfile,'TIME',mat_tot.TimeStamp-timeref);
+    ncwrite(ncfile,'TIME',single(mat_tot.TimeStamp-timeref));
     ncwrite(ncfile,'LATITUDE',latGrid);
     ncwrite(ncfile,'LONGITUDE',lonGrid);
     ncwrite(ncfile,'crs',0);
@@ -991,9 +1004,9 @@ try
     ncwrite(ncfile,'SLNT',sitesLon);
     ncwrite(ncfile,'SCDR',sitesCodes');
     ncwrite(ncfile,'SCDT',sitesCodes');
-    ncwrite(ncfile,'TIME_SEADATANET_QC',int8(sdnTime_QCflag));
+    ncwrite(ncfile,'TIME_SEADATANET_QC',sdnTime_QCflag);
     ncwrite(ncfile,'POSITION_SEADATANET_QC',sdnPosition_QCflag);
-    ncwrite(ncfile,'DEPTH_SEADATANET_QC',int8(sdnDepth_QCflag));
+    ncwrite(ncfile,'DEPTH_SEADATANET_QC',sdnDepth_QCflag);
     ncwrite(ncfile,'QCflag',overall_QCflag);
     ncwrite(ncfile,'VART_QC',temporalDerivativeThreshold_QCflag);
     ncwrite(ncfile,'GDOP_QC',GDOP_QCflag);
@@ -1037,7 +1050,7 @@ try
     ncwriteatt(ncfile, '/','time_coverage_start',char(timeCoverageStart));
     ncwriteatt(ncfile, '/','time_coverage_end',char(timeCoverageEnd));
     % Conventions used
-    ncwriteatt(ncfile,'/','format_version',char('v2.1.1'));
+    ncwriteatt(ncfile,'/','format_version',char('v2.1'));
     ncwriteatt(ncfile,'/','Conventions',char('CF-1.6, OceanSITES-Manual-1.2, Copernicus-InSituTAC-SRD-1.4, CopernicusInSituTAC-ParametersList-3.1.0, Unidata, ACDD, INSPIRE'));
     % Publication information
     ncwriteatt(ncfile,'/','update_interval',char('void'));
@@ -1127,7 +1140,7 @@ end
 %%
 
 if(T2C_err==0)
-    disp(['[' datestr(now) '] - - ' 'tot2netCDF_v32.m successfully executed.']);
+    disp(['[' datestr(now) '] - - ' 'tot2netCDF_v31.m successfully executed.']);
 end
 
 return
