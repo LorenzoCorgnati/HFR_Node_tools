@@ -348,7 +348,8 @@ try
             extensionIndex = find(not(cellfun('isempty', extensionIndexC)));
             
             % Find the index of the NRT_processed_flag field
-            NRT_processed_flagIndex = find(not(cellfun('isempty', strfind(toBeCombinedRadials_columnNames, 'NRT_processed_flag'))));
+            NRT_processed_flagIndex = strmatch('NRT_processed_flag',toBeCombinedRadials_columnNames,'exact');
+%             NRT_processed_flagIndex = find(not(cellfun('isempty', strfind(toBeCombinedRadials_columnNames, 'NRT_processed_flag'))));
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
