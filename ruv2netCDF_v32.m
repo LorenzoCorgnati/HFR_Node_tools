@@ -480,8 +480,7 @@ try
     end
     bearing_dim_1 = min(R.bear):-AngularResolution:0;
     bearing_dim_1 = sort(bearing_dim_1,'asc');
-    bearing_dim_2 = unique(R.bear');
-    bearing_dim_2 = sort(bearing_dim_2,'asc');
+    bearing_dim_2 = min(R.bear):AngularResolution:max(R.bear);
     bearing_dim_3 = max(R.bear):AngularResolution:360;    
     bearing_dim = unique([bearing_dim_1 bearing_dim_2 bearing_dim_3]);
     
