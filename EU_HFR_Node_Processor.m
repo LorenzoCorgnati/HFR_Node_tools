@@ -67,11 +67,11 @@ while(kk>0)
     % RADIALS COMBINATION & RADIALS AND TOTALS CONVERSION
 %     inputRUV2DB;
 %     inputCradAscii2DB;
-    HFRCombiner;
+%     HFRCombiner;
     
     % TOTALS CONVERSION
-    inputTUV2DB;
-    inputCurAsc2DB;
+%     inputTUV2DB;
+%     inputCurAsc2DB;
     TotalConversion;
     
     disp(['[' datestr(now) '] - - ' 'EU_HFR_Node_Processor loop ended.']);
