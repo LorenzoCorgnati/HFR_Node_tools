@@ -1,11 +1,11 @@
-%% inputCurAsc2DB.m
-% This application lists the input cur_asc (WERA totals) files pushed by the HFR data providers
-% and insert into the HFR database the information needed for the conversion of
-% the total data files into the European standard data
-% model.
+%% inputAscTot2DB.m
+% This application lists the input asc total (Shom customized WERA totals)
+% files pushed by the HFR data providers and insert into the HFR database 
+% the information needed for the conversion of the total data files into 
+% the European standard data model.
 
 % Author: Lorenzo Corgnati
-% Date: October 3, 2018
+% Date: October 21, 2019
 
 % E-mail: lorenzo.corgnati@sp.ismar.cnr.it
 %%
@@ -14,7 +14,7 @@ warning('off', 'all');
 
 iCurDB_err = 0;
 
-disp(['[' datestr(now) '] - - ' 'inputCurAsc2DB started.']);
+disp(['[' datestr(now) '] - - ' 'inputAscTot2DB started.']);
 
 startDateNum = datenum(startDate);
 
@@ -155,7 +155,7 @@ try
             network_data{network_idx,inputPathIndex} = strtrim(network_data{network_idx,inputPathIndex});
             % List the input cur_asc files
             try
-                ascFiles = rdir([network_data{network_idx,inputPathIndex} filesep '**' filesep '*.cur_asc'],'datenum>floor(now-8)');
+                ascFiles = rdir([network_data{network_idx,inputPathIndex} filesep '**' filesep '*.asc'],'datenum>floor(now-8)');
                 disp(['[' datestr(now) '] - - ' 'Total files from ' network_data{network_idx,network_idIndex} ' network successfully listed.']);
             catch err
                 disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
@@ -208,8 +208,8 @@ try
 %                                 end
 %                             end
 %                         end
-                        [date,time] = textread(ascFiles(asc_idx).name, '%11c %*0c %5c',1, 'headerlines',1);
-                        TimeStampVec = datevec([date ' ' time]);
+                        [dateY, dateM, dateD, timeH, timeM, timeS] = textread(ascFiles(asc_idx).name, '%4d %*0c %2d %*0c %2d %*0c %2d %*0c %2d %*0c %2d',1, 'headerlines',2);
+                        TimeStampVec = [dateY dateM dateD timeH timeM timeS];
                         TimeStamp = [num2str(TimeStampVec(1)) ' ' num2str(TimeStampVec(2),'%02d') ' ' num2str(TimeStampVec(3),'%02d') ' ' num2str(TimeStampVec(4),'%02d') ' ' num2str(TimeStampVec(5),'%02d') ' ' num2str(TimeStampVec(6),'%02d')];
                     catch err
                         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
@@ -282,5 +282,5 @@ end
 %%
 
 if(iCurDB_err==0)
-    disp(['[' datestr(now) '] - - ' 'inputCurAsc2DB successfully executed.']);
+    disp(['[' datestr(now) '] - - ' 'inputAscTot2DB successfully executed.']);
 end

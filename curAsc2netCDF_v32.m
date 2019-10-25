@@ -91,7 +91,7 @@ try
     %     [cA2C_err,topLeftLat,topLeftLon, cellSize, lonCells,latCells] = curAscGridSpec(ascHeader);
     [topLeftLat,topLeftLon, cellSize, lonCells,latCells]=textread(totFilename,'%f %f %f %u %u',1,'headerlines', nStation+4);
     assert(topLeftLat>=-90.0 & topLeftLat<=90.0,'Grid top-left latitude out of range');
-    assert(topLeftLon>=-180.0 & topLeftLon<=180.0,'Grid top-left latitude out of range');
+    assert(topLeftLon>=-180.0 & topLeftLon<=180.0,'Grid top-left longitude out of range');
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     cA2C_err = 1;
@@ -121,7 +121,7 @@ end
 
 try
     % Fill the TUV structure with the total data
-    [cA2C_err,mat_tot] = curAscTable2TUV(ascTable,tableFields,timestamp,gridLon,gridLat);
+    [cA2C_err,mat_tot] = curAscTable2TUV(ascTable,tableFields,timestamp,gridLon,gridLat,sitesLon,sitesLat);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
     cA2C_err = 1;

@@ -1,20 +1,21 @@
-%% inputRUV2DB.m
-% This application lists the input ruv files pushed by the HFR data providers
-% and insert into the HFR database the information needed for the
-% combination of Codar radial files into totals and for the generation of the
-% radial and total data files into the European standard data model.
+%% inputAscRad2DB.m
+% This application lists the input asc radial (Shom customized WERA totals)
+% files pushed by the HFR data providers and insert into the HFR database
+% the information needed for the combination of radial files into totals 
+% and for the generation of the radial and total data files into the 
+% European standard data model.
 
 % Author: Lorenzo Corgnati
-% Date: July 16, 2018
+% Date: October 21, 2019
 
 % E-mail: lorenzo.corgnati@sp.ismar.cnr.it
 %%
 
 warning('off', 'all');
 
-iRDB_err = 0;
+iCradDB_err = 0;
 
-disp(['[' datestr(now) '] - - ' 'inputRUV2DB started.']);
+disp(['[' datestr(now) '] - - ' 'inputAscRad2DB started.']);
 
 startDateNum = datenum(startDate);
 
@@ -27,7 +28,7 @@ try
     disp(['[' datestr(now) '] - - ' 'Connection to database successfully established.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    iRDB_err = 1;
+    iCradDB_err = 1;
 end
 
 %%
@@ -41,7 +42,7 @@ try
     disp(['[' datestr(now) '] - - ' 'Query to account_tb table for retrieving the networks managed by the HFR provider username successfully executed.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    iRDB_err = 1;
+    iCradDB_err = 1;
 end
 
 % Fetch data
@@ -51,7 +52,7 @@ try
     disp(['[' datestr(now) '] - - ' 'Data of the networks managed by the HFR provider username successfully fetched from account_tb table.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    iRDB_err = 1;
+    iCradDB_err = 1;
 end
 
 % Close cursor
@@ -60,7 +61,7 @@ try
     disp(['[' datestr(now) '] - - ' 'Cursor to account_tb table successfully closed.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    iRDB_err = 1;
+    iCradDB_err = 1;
 end
 
 %%
@@ -71,8 +72,9 @@ try
     HFRPnetworks = regexp(HFRPusername_data{1}, '[ ,;]+', 'split');
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    iRDB_err = 1;
+    iCradDB_err = 1;
 end
+
 %%
 
 %% Query the database for retrieving data from managed networks
@@ -88,7 +90,7 @@ try
     disp(['[' datestr(now) '] - - ' 'Query to network_tb table for retrieving data of the managed networks successfully executed.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    iRDB_err = 1;
+    iCradDB_err = 1;
 end
 
 % Fetch data
@@ -98,7 +100,7 @@ try
     disp(['[' datestr(now) '] - - ' 'Data of the managed networks successfully fetched from network_tb table.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    iRDB_err = 1;
+    iCradDB_err = 1;
 end
 
 % Retrieve column names
@@ -107,7 +109,7 @@ try
     disp(['[' datestr(now) '] - - ' 'Column names from network_tb table successfully retrieved.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    iRDB_err = 1;
+    iCradDB_err = 1;
 end
 
 % Retrieve the number of networks
@@ -116,7 +118,7 @@ try
     disp(['[' datestr(now) '] - - ' 'Number of managed networks successfully retrieved from network_tb table.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    iRDB_err = 1;
+    iCradDB_err = 1;
 end
 
 % Close cursor
@@ -125,7 +127,7 @@ try
     disp(['[' datestr(now) '] - - ' 'Cursor to network_tb table successfully closed.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    iRDB_err = 1;
+    iCradDB_err = 1;
 end
 
 %%
@@ -138,20 +140,20 @@ try
     network_idIndex = find(not(cellfun('isempty', network_idIndexC)));
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    iRDB_err = 1;
+    iCradDB_err = 1;
 end
 
 % Scan the networks
 try
     for network_idx=1:numNetworks
-        iRDB_err = 0;
+        iCradDB_err = 0;
         try
             station_selectquery = ['SELECT * FROM station_tb WHERE network_id = ' '''' network_data{network_idx,network_idIndex} ''''];
             station_curs = exec(conn,station_selectquery);
             disp(['[' datestr(now) '] - - ' 'Query to station_tb table for retrieving the stations of the ' network_data{network_idx,network_idIndex} ' network successfully executed.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-            iRDB_err = 1;
+            iCradDB_err = 1;
         end
                 
         % Fetch data
@@ -161,7 +163,7 @@ try
             disp(['[' datestr(now) '] - - ' 'Data of the stations of the ' network_data{network_idx,network_idIndex} ' network successfully fetched from station_tb table.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-            iRDB_err = 1;
+            iCradDB_err = 1;
         end
                 
         % Retrieve column names
@@ -170,7 +172,7 @@ try
             disp(['[' datestr(now) '] - - ' 'Column names from station_tb table successfully retrieved.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-            iRDB_err = 1;
+            iCradDB_err = 1;
         end
                 
         % Retrieve the number of stations belonging to the current network
@@ -179,7 +181,7 @@ try
             disp(['[' datestr(now) '] - - ' 'Number of stations belonging to the ' network_data{network_idx,network_idIndex} ' network successfully retrieved from station_tb table.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-            iRDB_err = 1;
+            iCradDB_err = 1;
         end
                 
         % Close cursor to station_tb table
@@ -188,7 +190,7 @@ try
             disp(['[' datestr(now) '] - - ' 'Cursor to station_tb table successfully closed.']);
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-            iRDB_err = 1;
+            iCradDB_err = 1;
         end
                 
         try
@@ -201,7 +203,7 @@ try
             station_idIndex = find(not(cellfun('isempty', station_idIndexC)));
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-            iRDB_err = 1;
+            iCradDB_err = 1;
         end
         
         % Scan the stations
@@ -209,29 +211,29 @@ try
             if(~isempty(station_data{station_idx,inputPathIndex}))
                 % Trim heading and trailing whitespaces from folder path
                 station_data{station_idx,inputPathIndex} = strtrim(station_data{station_idx,inputPathIndex});
-                % List the input ruv files for the current station
+                % List the input crad_ascii files for the current station
                 try
-                    ruvFiles = rdir([station_data{station_idx,inputPathIndex} filesep '**' filesep '*.ruv'],'datenum>floor(now-8)');
+                    cradFiles = rdir([station_data{station_idx,inputPathIndex} filesep '**' filesep '*.asc'],'datenum>floor(now-8)');
                     disp(['[' datestr(now) '] - - ' 'Radial files from ' station_data{station_idx,station_idIndex} ' station successfully listed.']);
                 catch err
                     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-                    iRDB_err = 1;
+                    iCradDB_err = 1;
                 end
                 
-                % Insert information about the ruv file into the database (if not yet present)
-                for ruv_idx=1:length(ruvFiles)
-                    iRDB_err = 0;
+                % Insert information about the crad_ascii file into the database (if not yet present)
+                for crad_idx=1:length(cradFiles)
+                    iCradDB_err = 0;
                     % Retrieve the filename
-                    [pathstr,name,ext]=fileparts(ruvFiles(ruv_idx).name);
+                    [pathstr,name,ext]=fileparts(cradFiles(crad_idx).name);
                     noFullPathName=[name ext];
-                    % Check if the current ruv file is already present on the database
+                    % Check if the current crad_ascii file is already present on the database
                     try
                         dbRadials_selectquery = ['SELECT * FROM radial_input_tb WHERE datetime>' '''' startDate ''' AND network_id = ' '''' network_data{network_idx,network_idIndex} ''' AND filename = ' '''' noFullPathName ''' ORDER BY timestamp'];
                         dbRadials_curs = exec(conn,dbRadials_selectquery);
                         disp(['[' datestr(now) '] - - ' 'Query to radial_input_tb table for checking if ' noFullPathName ' radial file is already present in the database successfully executed.']);
                     catch err
                         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-                        iRDB_err = 1;
+                        iCradDB_err = 1;
                     end
                     
                     % Fetch data
@@ -240,28 +242,19 @@ try
                         disp(['[' datestr(now) '] - - ' 'Data about the presence of ' noFullPathName ' radial file in the database successfully fetched from radial_input_tb table.']);
                     catch err
                         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-                        iRDB_err = 1;
+                        iCradDB_err = 1;
                     end
                                         
                     if(rows(dbRadials_curs) == 0)
-                        % Retrieve information about the ruv file
+                        % Retrieve information about the crad_ascii file
                         try
-                            % Load the radial file as structure
-                            radStruct = loadRDLFile(ruvFiles(ruv_idx).name,'false','warning');
-                            % Read the file header
-                            radHeader = radStruct.OtherMetadata.Header;
-                            % Retrieve information from header
-                            for header_idx=1:length(radHeader)
-                                splitLine = regexp(radHeader{header_idx}, ' ', 'split');
-                                % Retrieve TimeStamp
-                                if(strcmp(splitLine{1}, '%TimeStamp:'))
-                                    TimeStamp = strrep(radHeader{header_idx}(length('%TimeStamp:')+2:length(radHeader{header_idx})), '"', '');
-                                    break;
-                                end
-                            end
+                            % Read the timestamp from the header
+                            [dateY, dateM, dateD, timeH, timeM, timeS] = textread(cradFiles(crad_idx).name, '%4d %*0c %2d %*0c %2d %*0c %2d %*0c %2d %*0c %2d',1, 'headerlines',3);
+                            TimeStampVec = [dateY dateM dateD timeH timeM timeS];
+                            TimeStamp = [num2str(TimeStampVec(1)) ' ' num2str(TimeStampVec(2),'%02d') ' ' num2str(TimeStampVec(3),'%02d') ' ' num2str(TimeStampVec(4),'%02d') ' ' num2str(TimeStampVec(5),'%02d') ' ' num2str(TimeStampVec(6),'%02d')];
                         catch err
                             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-                            iRDB_err = 1;
+                            iCradDB_err = 1;
                         end
                         
                         try
@@ -269,25 +262,25 @@ try
                             [t2d_err,DateTime] = timestamp2datetime(TimeStamp);
                         catch err
                             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-                            iRDB_err = 1;
+                            iCradDB_err = 1;
                         end
                         
-                        % Retrieve information about the ruv file
+                        % Retrieve information about the crad_ascii file
                         try
-                            ruvFileInfo = dir(ruvFiles(ruv_idx).name);
-                            ruvFilesize = ruvFileInfo.bytes/1024;
+                            cradFileInfo = dir(cradFiles(crad_idx).name);
+                            cradFilesize = cradFileInfo.bytes/1024;
                         catch err
                             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-                            iRDB_err = 1;
+                            iCradDB_err = 1;
                         end
                         
-                        % Write ruv info in radial_input_tb table
+                        % Write crad_ascii info in radial_input_tb table
                         try
                             % Define a cell array containing the column names to be added
                             addColnames = {'filename' 'filepath' 'network_id' 'station_id' 'timestamp' 'datetime' 'reception_date' 'filesize' 'extension' 'NRT_processed_flag'};
                             
                             % Define a cell array that contains the data for insertion
-                            addData = {noFullPathName,pathstr,network_data{network_idx,network_idIndex},station_data{station_idx,station_idIndex},TimeStamp,DateTime,(datestr(now,'yyyy-mm-dd HH:MM:SS')),ruvFilesize,ext,0};
+                            addData = {noFullPathName,pathstr,network_data{network_idx,network_idIndex},station_data{station_idx,station_idIndex},TimeStamp,DateTime,(datestr(now,'yyyy-mm-dd HH:MM:SS')),cradFilesize,ext,0};
                             
                             % Append the product data into the radial_input_tb table on the database.
                             tablename = 'radial_input_tb';
@@ -295,8 +288,8 @@ try
                             disp(['[' datestr(now) '] - - ' noFullPathName ' radial file information successfully inserted into radial_input_tb table.']);
                         catch err
                             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-                            iRDB_err = 1;
-                        end                        
+                            iCradDB_err = 1;
+                        end                       
                     end
                 end
             end
@@ -304,7 +297,7 @@ try
     end
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    iRDB_err = 1;
+    iCradDB_err = 1;
 end
 
 %%
@@ -316,11 +309,11 @@ try
     disp(['[' datestr(now) '] - - ' 'Connection to database successfully closed.']);
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    iRDB_err = 1;
+    iCradDB_err = 1;
 end
-
+    
 %%
 
-if(iRDB_err==0)
-    disp(['[' datestr(now) '] - - ' 'inputRUV2DB successfully executed.']);
+if(iCradDB_err==0)
+    disp(['[' datestr(now) '] - - ' 'inputAscRad2DB successfully executed.']);
 end
