@@ -396,7 +396,7 @@ try
                         try
                             if (strcmp(toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),extensionIndex}, '.ruv')) % Codar data
                                 % v2.1.1
-                                [R2C_err,network_data(network_idx,:),station_data(toBeCombinedStationIndex,:),radOutputFilename,radOutputFilesize,station_tbUpdateFlag] = ruv2netCDF_v32(RADIAL(ruv_idx),network_data(network_idx,:),network_columnNames,station_data(toBeCombinedStationIndex,:),station_columnNames,toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),timeStampIndex});
+                                [R2C_err,network_data(network_idx,:),station_data(toBeCombinedStationIndex,:),radOutputFilename,radOutputFilesize,station_tbUpdateFlag] = ruv2netCDF_v33(RADIAL(ruv_idx),network_data(network_idx,:),network_columnNames,station_data(toBeCombinedStationIndex,:),station_columnNames,toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),timeStampIndex});
                                 disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1.1 file successfully created and stored.']);
                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
                             elseif (strcmp(toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),extensionIndex}, '.crad_ascii')) % WERA data
@@ -497,7 +497,7 @@ try
                         % Create the total netCDF file according to the European standard data model
                         if (strcmp(extensions, '.ruv')) % Codar data
                             % v2.1.1
-                            [T2C_err,network_data(network_idx,:),station_data(contrSitesIndices,:),totOutputFilename,totOutputFilesize] = tot2netCDF_v32(TUVmask,network_data(network_idx,:),network_columnNames,station_data(contrSitesIndices,:),station_columnNames,toBeCombinedRadials_data{radial_idx,timeStampIndex},station_data);
+                            [T2C_err,network_data(network_idx,:),station_data(contrSitesIndices,:),totOutputFilename,totOutputFilesize] = tot2netCDF_v33(TUVmask,network_data(network_idx,:),network_columnNames,station_data(contrSitesIndices,:),station_columnNames,toBeCombinedRadials_data{radial_idx,timeStampIndex},station_data);
                             % LINE BELOW TO BE COMMENTED WHEN THE WERA FILE CONVERTER IS RUNNING
                             disp(['[' datestr(now) '] - - ' totOutputFilename ' total netCDF v2.1.1 file successfully created and stored.']);
                         elseif (strcmp(toBeCombinedRadials_data{toBeCombinedStationIndex,extensionIndex}, 'crad_ascii')) % WERA data

@@ -268,13 +268,13 @@ try
             try
                 if (strcmp(toBeConvertedTotals_data{toBeConverted_idx,extensionIndex}, '.tuv')) % Codar data
                     % v2.1.1
-                    [TC_err, network_data(network_idx,:), outputFilename, outputFilesize] = tuv2netCDF_v32([toBeConvertedTotals_data{toBeConverted_idx,filepathIndex} filesep toBeConvertedTotals_data{toBeConverted_idx,filenameIndex}],toBeConvertedTotals_data{toBeConverted_idx,timestampIndex},network_data(network_idx,:),network_columnNames,station_data,station_columnNames);
+                    [TC_err, network_data(network_idx,:), outputFilename, outputFilesize] = tuv2netCDF_v33([toBeConvertedTotals_data{toBeConverted_idx,filepathIndex} filesep toBeConvertedTotals_data{toBeConverted_idx,filenameIndex}],toBeConvertedTotals_data{toBeConverted_idx,timestampIndex},network_data(network_idx,:),network_columnNames,station_data,station_columnNames);
                 elseif (strcmp(toBeConvertedTotals_data{toBeConverted_idx,extensionIndex}, '.cur_asc')) % WERA data
                     % v2.1.1
-                    [TC_err, network_data(network_idx,:), outputFilename, outputFilesize] = curAsc2netCDF_v32([toBeConvertedTotals_data{toBeConverted_idx,filepathIndex} filesep toBeConvertedTotals_data{toBeConverted_idx,filenameIndex}],toBeConvertedTotals_data{toBeConverted_idx,timestampIndex},network_data(network_idx,:),network_columnNames,station_data,station_columnNames);
+                    [TC_err, network_data(network_idx,:), outputFilename, outputFilesize] = curAsc2netCDF_v33([toBeConvertedTotals_data{toBeConverted_idx,filepathIndex} filesep toBeConvertedTotals_data{toBeConverted_idx,filenameIndex}],toBeConvertedTotals_data{toBeConverted_idx,timestampIndex},network_data(network_idx,:),network_columnNames,station_data,station_columnNames);
                 elseif (strcmp(toBeConvertedTotals_data{toBeConverted_idx,extensionIndex}, '.asc')) % WERA data
                     % v2.1.1
-                    [TC_err, network_data(network_idx,:), outputFilename, outputFilesize] = ascTot2netCDF_v32([toBeConvertedTotals_data{toBeConverted_idx,filepathIndex} filesep toBeConvertedTotals_data{toBeConverted_idx,filenameIndex}],toBeConvertedTotals_data{toBeConverted_idx,timestampIndex},network_data(network_idx,:),network_columnNames,station_data,station_columnNames);
+                    [TC_err, network_data(network_idx,:), outputFilename, outputFilesize] = ascTot2netCDF_v33([toBeConvertedTotals_data{toBeConverted_idx,filepathIndex} filesep toBeConvertedTotals_data{toBeConverted_idx,filenameIndex}],toBeConvertedTotals_data{toBeConverted_idx,timestampIndex},network_data(network_idx,:),network_columnNames,station_data,station_columnNames);
                 end
                 if(TC_err==0)
                     disp(['[' datestr(now) '] - - ' outputFilename ' total netCDF v2.1.1 file successfully created and stored.']);
