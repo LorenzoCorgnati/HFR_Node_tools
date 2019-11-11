@@ -1561,7 +1561,7 @@ try
     netcdf.putAtt(ncid, varid_global, 'institution_reference', institution_websiteStr);
     netcdf.putAtt(ncid, varid_global, 'references', 'High Frequency Radar European common data and metadata model Reference Card: all you need to know about High Frequency Radar (HFR) data harmonization at a glance. http://www.marineinsitu.eu/wp-content/uploads/2018/02/HFR_Data_Model_Reference_Card_v1.pdf');
     netcdf.putAtt(ncid, varid_global, 'software_name', 'HFR_Combiner');
-    netcdf.putAtt(ncid, varid_global, 'software_version', 'v3.1');
+    netcdf.putAtt(ncid, varid_global, 'software_version', 'v3.3');
     netcdf.putAtt(ncid, varid_global, 'date_issued', dateCreated);
     
     % Globals sourced from radial file metadata

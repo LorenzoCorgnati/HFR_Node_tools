@@ -1132,7 +1132,7 @@ try
     ncwriteatt(ncfile,'/','institution_reference',char(institution_websiteStr));
     ncwriteatt(ncfile,'/','date_issued',char(dateCreated));
     ncwriteatt(ncfile,'/','software_name',char('HFR_Combiner'));
-    ncwriteatt(ncfile,'/','software_version',char('v3.1'));
+    ncwriteatt(ncfile,'/','software_version',char('v3.3'));
     ncwriteatt(ncfile,'/','references',char('High Frequency Radar European common data and metadata model Reference Card: all you need to know about High Frequency Radar (HFR) data harmonization at a glance. http://www.marineinsitu.eu/wp-content/uploads/2018/02/HFR_Data_Model_Reference_Card_v1.pdf'));
     
 catch err
