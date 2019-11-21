@@ -1076,7 +1076,7 @@ try
     ncwriteatt(ncfile, '/','time_coverage_end',char(timeCoverageEnd));
     % Conventions used
     ncwriteatt(ncfile,'/','format_version',char('v2.1.1'));
-    ncwriteatt(ncfile,'/','Conventions',char('CF-1.6, OceanSITES-Manual-1.2, Copernicus-InSituTAC-SRD-1.4, CopernicusInSituTAC-ParametersList-3.1.0, Unidata, ACDD, INSPIRE'));
+    ncwriteatt(ncfile,'/','Conventions',char('CF-1.6 Jerico-Next-deliverable-D5.14 Copernicus-InSituTAC-Manual-1.0 Copernicus-InSituTAC-SRD-1.4 Copernicus-InSituTAC-ParametersList-3.1.0'));
     % Publication information
     ncwriteatt(ncfile,'/','update_interval',char('void'));
     ncwriteatt(ncfile,'/','citation',char(citation_str));
