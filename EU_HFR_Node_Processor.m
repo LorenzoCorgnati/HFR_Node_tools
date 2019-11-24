@@ -66,13 +66,13 @@ while(kk>0)
     
     % RADIALS COMBINATION & RADIALS AND TOTALS CONVERSION
     inputRUV2DB;
-    inputAscRad2DB;
+%     inputAscRad2DB;
 %     inputCradAscii2DB;
     HFRCombiner;
     
     % TOTALS CONVERSION
-%     inputTUV2DB;
-%     inputAscTot2DB;
+    inputTUV2DB;
+    inputAscTot2DB;
     inputCurAsc2DB;
     TotalConversion;
     

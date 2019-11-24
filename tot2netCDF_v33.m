@@ -329,7 +329,7 @@ try
     outputPathIndex = find(not(cellfun('isempty', strfind(networkFields, 'total_HFRnetCDF_folder_path'))));
     network_idIndex = find(not(cellfun('isempty', strfind(networkFields, 'network_id'))));
     networkData{outputPathIndex} = strtrim(networkData{outputPathIndex});
-    [tFB_err, ncFilePath] = totalFolderBuilder_v211(networkData{outputPathIndex}, timestamp);
+    [tFB_err, ncFilePath] = totalFolderBuilder_v212(networkData{outputPathIndex}, timestamp);
     if(tFB_err == 0)
         ncfile = [ncFilePath filesep networkData{network_idIndex} '-Total_' time_str '.nc'];
         ncFileNoPath = [networkData{network_idIndex} '-Total_' time_str '.nc'];

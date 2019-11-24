@@ -130,7 +130,7 @@ try
     network_idIndex = find(not(cellfun('isempty', strfind(networkFields, 'network_id'))));
     stationData{outputPathIndex} = strtrim(stationData{outputPathIndex});
     %v2.1.1
-    [rFB_err, ncFilePath] = radialFolderBuilder_v211(stationData{outputPathIndex},siteCode,timestamp);
+    [rFB_err, ncFilePath] = radialFolderBuilder_v212(stationData{outputPathIndex},siteCode,timestamp);
     if(rFB_err == 0)
         ncfile = [ncFilePath filesep networkData{network_idIndex} '-' siteCode '_' fileTime '.nc'];
         ncFileNoPath = [networkData{network_idIndex} '-' siteCode '_' fileTime '.nc'];
