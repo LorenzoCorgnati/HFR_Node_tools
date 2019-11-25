@@ -458,7 +458,7 @@ if(cA2C_err == 0)
         lat_dim = size(latGrid,1);
         lon_dim = size(lonGrid,1);
         depth_dim = 1;
-        maxSite_dim = size(sitesCodes,1);
+        maxSite_dim = 50;
         maxInst_dim = length(EDMO_code);
         refMax_dim = 1;
         string15_dim = 15;

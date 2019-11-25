@@ -395,7 +395,7 @@ try
     lat_dim = size(TUVgrid.gridLat,1);
     lon_dim = size(TUVgrid.gridLon,2);
     depth_dim = 1;
-    maxSite_dim = size(siteCodes,1);
+    maxSite_dim = 50;
     maxInst_dim = length(EDMO_code);
     refMax_dim = 1;
     string15_dim = 15;

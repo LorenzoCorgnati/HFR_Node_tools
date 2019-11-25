@@ -68,7 +68,7 @@ while(kk>0)
     inputRUV2DB;
 %     inputAscRad2DB;
 %     inputCradAscii2DB;
-    HFRCombiner;
+%     HFRCombiner;
     
     % TOTALS CONVERSION
     inputTUV2DB;
