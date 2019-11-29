@@ -606,7 +606,7 @@ try
         'FillValue',netcdf.getConstant('NC_FILL_BYTE'),...
         'Format',ncfmt);
     
-    nccreate(ncfile,'DEPTH_QC',...
+    nccreate(ncfile,'DEPH_QC',...
         'Dimensions',{'TIME',time_dim},...
         'Datatype','int8',...
         'FillValue',netcdf.getConstant('NC_FILL_BYTE'),...
@@ -753,7 +753,7 @@ try
     ncwriteatt(ncfile,'DEPH','sdn_parameter_urn',char('SDN:P01::ADEPZZ01'));
     ncwriteatt(ncfile,'DEPH','sdn_uom_name',char('Metres'));
     ncwriteatt(ncfile,'DEPH','sdn_uom_urn',char('SDN:P06::ULAA'));
-    ncwriteatt(ncfile,'DEPH','ancillary_variables',char('DEPTH_QC'));
+    ncwriteatt(ncfile,'DEPH','ancillary_variables',char('DEPH_QC'));
     
     ncwriteatt(ncfile,'EWCT','long_name',char('West-east current component'));
     ncwriteatt(ncfile,'EWCT','standard_name',char('eastward_sea_water_velocity'));
@@ -883,14 +883,14 @@ try
     ncwriteatt(ncfile,'POSITION_QC','scale_factor',int8(1));
     ncwriteatt(ncfile,'POSITION_QC','add_offset',int8(0));
     
-    ncwriteatt(ncfile,'DEPTH_QC','long_name',char('Depth Quality Flag'));
-    ncwriteatt(ncfile,'DEPTH_QC','units',char('1'));
-    ncwriteatt(ncfile,'DEPTH_QC','valid_range',int8([0 9]));
-    ncwriteatt(ncfile,'DEPTH_QC','flag_values',int8([0 1 2 3 4 7 8 9]));
-    ncwriteatt(ncfile,'DEPTH_QC','flag_meanings',char('unknown good_data probably_good_data potentially_correctable_bad_data bad_data nominal_value interpolated_value missing_value'));
-    ncwriteatt(ncfile,'DEPTH_QC','comment',char('OceanSITES quality flagging for depth coordinate.'));
-    ncwriteatt(ncfile,'DEPTH_QC','scale_factor',int8(1));
-    ncwriteatt(ncfile,'DEPTH_QC','add_offset',int8(0));
+    ncwriteatt(ncfile,'DEPH_QC','long_name',char('Depth Quality Flag'));
+    ncwriteatt(ncfile,'DEPH_QC','units',char('1'));
+    ncwriteatt(ncfile,'DEPH_QC','valid_range',int8([0 9]));
+    ncwriteatt(ncfile,'DEPH_QC','flag_values',int8([0 1 2 3 4 7 8 9]));
+    ncwriteatt(ncfile,'DEPH_QC','flag_meanings',char('unknown good_data probably_good_data potentially_correctable_bad_data bad_data nominal_value interpolated_value missing_value'));
+    ncwriteatt(ncfile,'DEPH_QC','comment',char('OceanSITES quality flagging for depth coordinate.'));
+    ncwriteatt(ncfile,'DEPH_QC','scale_factor',int8(1));
+    ncwriteatt(ncfile,'DEPH_QC','add_offset',int8(0));
     
     ncwriteatt(ncfile,'QCflag','long_name',char('Overall Quality Flags'));
     ncwriteatt(ncfile,'QCflag','units',char('1'));
@@ -1058,7 +1058,7 @@ try
     ncwrite(ncfile,'SCDT',sitesCodes');
     ncwrite(ncfile,'TIME_QC',sdnTime_QCflag);
     ncwrite(ncfile,'POSITION_QC',sdnPosition_QCflag);
-    ncwrite(ncfile,'DEPTH_QC',sdnDepth_QCflag);
+    ncwrite(ncfile,'DEPH_QC',sdnDepth_QCflag);
     ncwrite(ncfile,'QCflag',overall_QCflag);
     ncwrite(ncfile,'VART_QC',temporalDerivativeThreshold_QCflag);
     ncwrite(ncfile,'GDOP_QC',GDOP_QCflag);
@@ -1103,7 +1103,7 @@ try
     ncwriteatt(ncfile, '/','time_coverage_start',char(timeCoverageStart));
     ncwriteatt(ncfile, '/','time_coverage_end',char(timeCoverageEnd));
     % Conventions used
-    ncwriteatt(ncfile,'/','format_version',char('v2.1.1'));
+    ncwriteatt(ncfile,'/','format_version',char('v2.1.2'));
     ncwriteatt(ncfile,'/','Conventions',char('CF-1.6 Jerico-Next-deliverable-D5.14 Copernicus-InSituTAC-Manual-1.0 Copernicus-InSituTAC-SRD-1.4 Copernicus-InSituTAC-ParametersList-3.1.0'));
     % Publication information
     ncwriteatt(ncfile,'/','update_interval',char('void'));
