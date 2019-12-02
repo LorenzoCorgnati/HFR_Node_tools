@@ -895,7 +895,7 @@ try
     ncwriteatt(ncfile,'GDOP','ancillary_variables',char('QCflag, GDOP_QC'));
     
     ncwriteatt(ncfile,'TIME_QC','long_name',char('Time Quality Flag'));
-    ncwriteatt(ncfile,'TIME_QC','conventions',char('Copernicus Marine in situ reference table 2.'));    
+    ncwriteatt(ncfile,'TIME_QC','conventions',char('Copernicus Marine in situ reference table 2'));    
     ncwriteatt(ncfile,'TIME_QC','units',char('1'));
 %     ncwriteatt(ncfile,'TIME_QC','valid_range',int8([0 9]));
     ncwriteatt(ncfile,'TIME_QC','valid_min',int8(0));
@@ -907,7 +907,7 @@ try
     ncwriteatt(ncfile,'TIME_QC','add_offset',int8(0));
     
     ncwriteatt(ncfile,'POSITION_QC','long_name',char('Position Quality Flags'));
-    ncwriteatt(ncfile,'POSITION_QC','conventions',char('Copernicus Marine in situ reference table 2.'));
+    ncwriteatt(ncfile,'POSITION_QC','conventions',char('Copernicus Marine in situ reference table 2'));
     ncwriteatt(ncfile,'POSITION_QC','units',char('1'));
 %     ncwriteatt(ncfile,'POSITION_QC','valid_range',int8([0 9]));
     ncwriteatt(ncfile,'POSITION_QC','valid_min',int8(0));
@@ -919,7 +919,7 @@ try
     ncwriteatt(ncfile,'POSITION_QC','add_offset',int8(0));
     
     ncwriteatt(ncfile,'DEPH_QC','long_name',char('Depth Quality Flag'));
-    ncwriteatt(ncfile,'DEPH_QC','conventions',char('Copernicus Marine in situ reference table 2.'));
+    ncwriteatt(ncfile,'DEPH_QC','conventions',char('Copernicus Marine in situ reference table 2'));
     ncwriteatt(ncfile,'DEPH_QC','units',char('1'));
 %     ncwriteatt(ncfile,'DEPH_QC','valid_range',int8([0 9]));
     ncwriteatt(ncfile,'DEPH_QC','valid_min',int8(0));
@@ -931,7 +931,7 @@ try
     ncwriteatt(ncfile,'DEPH_QC','add_offset',int8(0));
     
     ncwriteatt(ncfile,'QCflag','long_name',char('Overall Quality Flags'));
-    ncwriteatt(ncfile,'QCflag','conventions',char('Copernicus Marine in situ reference table 2.'));
+    ncwriteatt(ncfile,'QCflag','conventions',char('Copernicus Marine in situ reference table 2'));
     ncwriteatt(ncfile,'QCflag','units',char('1'));
 %     ncwriteatt(ncfile,'QCflag','valid_range',int8([0 9]));
     ncwriteatt(ncfile,'QCflag','valid_min',int8(0));
@@ -943,7 +943,7 @@ try
     ncwriteatt(ncfile,'QCflag','add_offset',int8(0));
     
     ncwriteatt(ncfile,'VART_QC','long_name',char('Variance Threshold Quality Flags'));
-    ncwriteatt(ncfile,'VART_QC','conventions',char('Copernicus Marine in situ reference table 2.'));
+    ncwriteatt(ncfile,'VART_QC','conventions',char('Copernicus Marine in situ reference table 2'));
     ncwriteatt(ncfile,'VART_QC','units',char('1'));
 %     ncwriteatt(ncfile,'VART_QC','valid_range',int8([0 9]));
     ncwriteatt(ncfile,'VART_QC','valid_min',int8(0));
@@ -956,7 +956,7 @@ try
     ncwriteatt(ncfile,'VART_QC','add_offset',int8(0));
     
     ncwriteatt(ncfile,'GDOP_QC','long_name',char('GDOP Threshold Quality Flags'));
-    ncwriteatt(ncfile,'GDOP_QC','conventions',char('Copernicus Marine in situ reference table 2.'));
+    ncwriteatt(ncfile,'GDOP_QC','conventions',char('Copernicus Marine in situ reference table 2'));
     ncwriteatt(ncfile,'GDOP_QC','units',char('1'));
 %     ncwriteatt(ncfile,'GDOP_QC','valid_range',int8([0 9]));
     ncwriteatt(ncfile,'GDOP_QC','valid_min',int8(0));
@@ -969,7 +969,7 @@ try
     ncwriteatt(ncfile,'GDOP_QC','add_offset',int8(0));
     
     ncwriteatt(ncfile,'DDNS_QC','long_name',char('Data Density Threshold Quality Flags'));
-    ncwriteatt(ncfile,'DDNS_QC','conventions',char('Copernicus Marine in situ reference table 2.'));
+    ncwriteatt(ncfile,'DDNS_QC','conventions',char('Copernicus Marine in situ reference table 2'));
     ncwriteatt(ncfile,'DDNS_QC','units',char('1'));
 %     ncwriteatt(ncfile,'DDNS_QC','valid_range',int8([0 9]));
     ncwriteatt(ncfile,'DDNS_QC','valid_min',int8(0));
@@ -982,7 +982,7 @@ try
     ncwriteatt(ncfile,'DDNS_QC','add_offset',int8(0));
     
     ncwriteatt(ncfile,'CSPD_QC','long_name',char('Velocity Threshold Quality Flags'));
-    ncwriteatt(ncfile,'CSPD_QC','conventions',char('Copernicus Marine in situ reference table 2.'));
+    ncwriteatt(ncfile,'CSPD_QC','conventions',char('Copernicus Marine in situ reference table 2'));
     ncwriteatt(ncfile,'CSPD_QC','units',char('1'));
 %     ncwriteatt(ncfile,'CSPD_QC','valid_range',int8([0 9]));
     ncwriteatt(ncfile,'CSPD_QC','valid_min',int8(0));
