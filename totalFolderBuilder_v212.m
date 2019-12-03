@@ -1,4 +1,4 @@
-%% totalFolderBuilder_v211.m
+%% totalFolderBuilder_v212.m
 % This function builds the folder structure for storing the converted nc files
 % for total data and the full filename of the converted nc total file,
 % according to the structure YYYY/YYYY_MM/YYYY_MM_DD/.
@@ -14,14 +14,14 @@
 
 
 % Author: Lorenzo Corgnati
-% Date: May 31, 2019
+% Date: November 24, 2019
 
 % E-mail: lorenzo.corgnati@sp.ismar.cnr.it
 %%
 
-function [tFB_err,fullPath] = totalFolderBuilder_v211(mainPath,ts)
+function [tFB_err,fullPath] = totalFolderBuilder_v212(mainPath,ts)
 
-disp(['[' datestr(now) '] - - ' 'totalFolderBuilder_v211.m started.']);
+disp(['[' datestr(now) '] - - ' 'totalFolderBuilder_v212.m started.']);
 
 tFB_err = 0;
 
@@ -39,18 +39,18 @@ catch err
 end
 
 % Create the folder structure
-% Version 2.1.1
+% Version 2.1.2
 try
-    if (exist([mainPath filesep 'v2.1.1' filesep yearFolder], 'dir') ~= 7)
-        mkdir([mainPath filesep 'v2.1.1' filesep yearFolder]);
+    if (exist([mainPath filesep 'v2.1.2' filesep yearFolder], 'dir') ~= 7)
+        mkdir([mainPath filesep 'v2.1.2' filesep yearFolder]);
     end
     
-    if (exist([mainPath filesep 'v2.1.1' filesep monthFolder], 'dir') ~= 7)
-        mkdir([mainPath filesep 'v2.1.1' filesep monthFolder]);
+    if (exist([mainPath filesep 'v2.1.2' filesep monthFolder], 'dir') ~= 7)
+        mkdir([mainPath filesep 'v2.1.2' filesep monthFolder]);
     end
     
-    if (exist([mainPath filesep 'v2.1.1' filesep dayFolder], 'dir') ~= 7)
-        mkdir([mainPath filesep 'v2.1.1' filesep dayFolder]);
+    if (exist([mainPath filesep 'v2.1.2' filesep dayFolder], 'dir') ~= 7)
+        mkdir([mainPath filesep 'v2.1.2' filesep dayFolder]);
     end
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
@@ -59,10 +59,10 @@ catch err
 end
 
 % Build the full filename for the nc total file
-fullPath = [mainPath filesep 'v2.1.1' filesep dayFolder];
+fullPath = [mainPath filesep 'v2.1.2' filesep dayFolder];
 
 if(tFB_err==0)
-    disp(['[' datestr(now) '] - - ' 'totalFolderBuilder_v211.m successfully executed.']);
+    disp(['[' datestr(now) '] - - ' 'totalFolderBuilder_v212.m successfully executed.']);
 end
 
 return

@@ -1,4 +1,4 @@
-%% radialFolderBuilder_v211.m
+%% radialFolderBuilder_v212.m
 % This function builds the folder structure for storing the converted nc files
 % for radial data and the full filename of the converted nc radial file,
 % according to the structure YYYY/YYYY_MM/YYYY_MM_DD/.
@@ -15,14 +15,14 @@
 
 
 % Author: Lorenzo Corgnati
-% Date: May 30, 2019
+% Date: November 24, 2019
 
 % E-mail: lorenzo.corgnati@sp.ismar.cnr.it
 %%
 
-function [rFB_err,fullPath] = radialFolderBuilder_v211(mainPath,siteCode,ts)
+function [rFB_err,fullPath] = radialFolderBuilder_v212(mainPath,siteCode,ts)
 
-disp(['[' datestr(now) '] - - ' 'radialFolderBuilder_v211.m started.']);
+disp(['[' datestr(now) '] - - ' 'radialFolderBuilder_v212.m started.']);
 
 rFB_err = 0;
 
@@ -40,18 +40,18 @@ catch err
 end
 
 % Create the folder structure
-% Version 2.1.1
+% Version 2.1.2
 try
-    if (exist([mainPath filesep 'v2.1.1' filesep siteCode filesep yearFolder], 'dir') ~= 7)
-        mkdir([mainPath filesep 'v2.1.1' filesep siteCode filesep yearFolder]);
+    if (exist([mainPath filesep 'v2.1.2' filesep siteCode filesep yearFolder], 'dir') ~= 7)
+        mkdir([mainPath filesep 'v2.1.2' filesep siteCode filesep yearFolder]);
     end
     
-    if (exist([mainPath filesep 'v2.1.1' filesep siteCode filesep monthFolder], 'dir') ~= 7)
-        mkdir([mainPath filesep 'v2.1.1' filesep siteCode filesep monthFolder]);
+    if (exist([mainPath filesep 'v2.1.2' filesep siteCode filesep monthFolder], 'dir') ~= 7)
+        mkdir([mainPath filesep 'v2.1.2' filesep siteCode filesep monthFolder]);
     end
     
-    if (exist([mainPath filesep 'v2.1.1' filesep siteCode filesep dayFolder], 'dir') ~= 7)
-        mkdir([mainPath filesep 'v2.1.1' filesep siteCode filesep dayFolder]);
+    if (exist([mainPath filesep 'v2.1.2' filesep siteCode filesep dayFolder], 'dir') ~= 7)
+        mkdir([mainPath filesep 'v2.1.2' filesep siteCode filesep dayFolder]);
     end
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
@@ -60,10 +60,10 @@ catch err
 end
 
 % Build the full filename for the nc total file
-fullPath = [mainPath filesep 'v2.1.1' filesep siteCode filesep dayFolder];
+fullPath = [mainPath filesep 'v2.1.2' filesep siteCode filesep dayFolder];
 
 if(rFB_err==0)
-    disp(['[' datestr(now) '] - - ' 'radialFolderBuilder_v211.m successfully executed.']);
+    disp(['[' datestr(now) '] - - ' 'radialFolderBuilder_v212.m successfully executed.']);
 end
 
 return
