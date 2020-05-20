@@ -349,7 +349,7 @@ try
             
             % Find the index of the NRT_processed_flag field
             NRT_processed_flagIndex = strmatch('NRT_processed_flag',toBeCombinedRadials_columnNames,'exact');
-%             NRT_processed_flagIndex = find(not(cellfun('isempty', strfind(toBeCombinedRadials_columnNames, 'NRT_processed_flag'))));
+            %             NRT_processed_flagIndex = find(not(cellfun('isempty', strfind(toBeCombinedRadials_columnNames, 'NRT_processed_flag'))));
         catch err
             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
             HFRC_err = 1;
@@ -382,7 +382,7 @@ try
                             disp(['[' datestr(now) '] - - ' 'loadRDLfile loading ...']);
                             RADIAL = loadRDLFile(radFiles, 'false', 'warning');
                         elseif(strcmp(toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),extensionIndex}, 'crad_ascii')) % WERA data
-                            % TO BE DONE
+                            % NOTHING TO DO
                         end
                     catch err
                         display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
@@ -400,9 +400,11 @@ try
                                 disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1.2 file successfully created and stored.']);
                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
                             elseif (strcmp(toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),extensionIndex}, '.crad_ascii')) % WERA data
-                                % TO BE DONE -- UNCOMMENT LINES BELOW WHEN DONE
-                                %                                 disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1 file successfully created and stored.']);
-                                %                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
+                                [R2C_err,network_data(network_idx,:),radOutputFilename,radOutputFilesize] = cradAscii2netCDF_v33(radFiles{ruv_idx},network_data(network_idx,:),network_columnNames,station_data(toBeCombinedStationIndex,:),station_columnNames,toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),timeStampIndex});
+                                disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1.2 file successfully created and stored.']);
+                                contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
+                                station_tbUpdateFlag = 0; % WERA radial files do not contain information about calibration
+                                numActiveStations = length(toBeCombinedRadialIndices); % WERA radials are not combined
                             end
                         catch err
                             display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
@@ -495,41 +497,13 @@ try
                         end
                         
                         % Create the total netCDF file according to the European standard data model
-                        if (strcmp(extensions, '.ruv')) % Codar data
-                            % v2.1.2
-                            [T2C_err,network_data(network_idx,:),station_data(contrSitesIndices,:),totOutputFilename,totOutputFilesize] = tot2netCDF_v33(TUVmask,network_data(network_idx,:),network_columnNames,station_data(contrSitesIndices,:),station_columnNames,toBeCombinedRadials_data{radial_idx,timeStampIndex},station_data);
-                            % LINE BELOW TO BE COMMENTED WHEN THE WERA FILE CONVERTER IS RUNNING
-                            disp(['[' datestr(now) '] - - ' totOutputFilename ' total netCDF v2.1.2 file successfully created and stored.']);
-                        elseif (strcmp(toBeCombinedRadials_data{toBeCombinedStationIndex,extensionIndex}, 'crad_ascii')) % WERA data
-                            % TO BE DONE
-                        end
-                        %                         % LINE BELOW TO BE UNCOMMENTED WHEN THE WERA FILE CONCERTER IS RUNNING
-                        %                         disp(['[' datestr(now) '] - - ' totOutputFilename ' total netCDF v2.1 file successfully created and stored.']);
-                        
-                        % Update NRT_processed_flag in the local radial table
                         try
-                            if(HFRC_err==0)
-                                toBeCombinedRadials_data(toBeCombinedRadialIndices,NRT_processed_flagIndex)={1};
-                            end
-                        catch err
-                            disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-                            HFRC_err = 1;
-                        end
-                        
-                        % Update NRT_processed_flag in radial_input_tb table
-                        try
-                            if((HFRC_err==0) && (length(toBeCombinedRadialIndices) == numActiveStations))
-                                % Define a cell array containing the column names to be updated
-                                updateColnames = {'NRT_processed_flag'};
-                                
-                                % Define a cell array that contains the data for insertion
-                                updateData = {1};
-                                
-                                % Update the radial_input_tb table on the database
-                                tablename = 'radial_input_tb';
-                                whereclause = ['WHERE timestamp = ' '''' toBeCombinedRadials_data{radial_idx,timeStampIndex} ''' AND network_id = ' '''' network_data{network_idx,network_idIndex} ''''];
-                                update(conn,tablename,updateColnames,updateData,whereclause);
-                                disp(['[' datestr(now) '] - - ' 'radial_input_tb table successfully updated with NRT processed flag for timestamp ' toBeCombinedRadials_data{radial_idx,timeStampIndex} '.']);
+                            if (strcmp(extensions, '.ruv')) % Codar data
+                                % v2.1.2
+                                [T2C_err,network_data(network_idx,:),station_data(contrSitesIndices,:),totOutputFilename,totOutputFilesize] = tot2netCDF_v33(TUVmask,network_data(network_idx,:),network_columnNames,station_data(contrSitesIndices,:),station_columnNames,toBeCombinedRadials_data{radial_idx,timeStampIndex},station_data);
+                                disp(['[' datestr(now) '] - - ' totOutputFilename ' total netCDF v2.1.2 file successfully created and stored.']);
+                            elseif (strcmp(toBeCombinedRadials_data{toBeCombinedStationIndex,extensionIndex}, 'crad_ascii')) % WERA data
+                                % NOTHING TO DO
                             end
                         catch err
                             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
@@ -561,6 +535,36 @@ try
                             disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
                             HFRC_err = 1;
                         end
+                    end
+                    
+                    % Update NRT_processed_flag in the local radial table
+                    try
+                        if(HFRC_err==0)
+                            toBeCombinedRadials_data(toBeCombinedRadialIndices,NRT_processed_flagIndex)={1};
+                        end
+                    catch err
+                        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+                        HFRC_err = 1;
+                    end
+                    
+                    % Update NRT_processed_flag in radial_input_tb table
+                    try
+                        if((HFRC_err==0) && (length(toBeCombinedRadialIndices) == numActiveStations))
+                            % Define a cell array containing the column names to be updated
+                            updateColnames = {'NRT_processed_flag'};
+                            
+                            % Define a cell array that contains the data for insertion
+                            updateData = {1};
+                            
+                            % Update the radial_input_tb table on the database
+                            tablename = 'radial_input_tb';
+                            whereclause = ['WHERE timestamp = ' '''' toBeCombinedRadials_data{radial_idx,timeStampIndex} ''' AND network_id = ' '''' network_data{network_idx,network_idIndex} ''''];
+                            update(conn,tablename,updateColnames,updateData,whereclause);
+                            disp(['[' datestr(now) '] - - ' 'radial_input_tb table successfully updated with NRT processed flag for timestamp ' toBeCombinedRadials_data{radial_idx,timeStampIndex} '.']);
+                        end
+                    catch err
+                        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+                        HFRC_err = 1;
                     end
                     
                     clear radFiles RADIAL contrSitesIndices TUV TUVgrid TUVmask radOutputFilename totOutputFilename;

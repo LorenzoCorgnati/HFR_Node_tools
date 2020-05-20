@@ -70,10 +70,8 @@ try
     % Read the data table
     [IX,IY,U,V,Acc_U,Acc_V,Flag] = textread(totFilename,'%u %u %f %f %f %f %u','headerlines', 7);
     ascTable=[IX,IY,U,V,Flag,Acc_U,Acc_V];
-    tableFields={'IX'    'IY'    'U[m/s]'    'V[m/s]'    'KL'    'Acc_U[m/s]'    'Acc_V[m/s]'}; % TO BE CANCELLED AFTER JAN'S CONFIRMATION
-    
-    % SONO ARRIVATO QUI
-    
+    tableFields={'IX'    'IY'    'U[m/s]'    'V[m/s]'    'KL'    'Acc_U[m/s]'    'Acc_V[m/s]'}; 
+        
     % Retrieve minimum and maximum longitude and latitude and number of lon and lat gridcells
     %     [cA2C_err,topLeftLat,topLeftLon, cellSize, lonCells,latCells] = curAscGridSpec(ascHeader);
     [minLon,maxLon, lonCells]=textread(totFilename,'%f %f %u',1,'headerlines', 4);
