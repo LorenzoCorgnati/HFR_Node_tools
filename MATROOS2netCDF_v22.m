@@ -1,13 +1,15 @@
-%% curAsc2netCDF_v22.m
-% This function converts hourly total files from native WERA ASCII format
-% .cur_asc in netCDF-4 format according to the European common data and metadata
+%% MATROOS2netCDF_v22.m
+% This function retrieves data from the HFR-MATROOS network via OpenDAP,
+% selects the data to be converted according to the processing time
+% interval and converts total files from the MATROOS netCDF format to the
+% standard netCDF-4 format according to the European common data and metadata
 % model integrating CMEMS-INSTAC and SDC CF extension requirements.
 % v2.2 complies with Copernicus-InSituTAC-FormatManual-1.4, 
 % Copernicus-InSituTAC-SRD-1.41 and Copernicus-InSituTAC-ParametersList-3.2.0
 
 % INPUT:
-%         totFilename: filename of the total file to be converted (including full path)
-%         timestamp: timestamp of the total file to be converted
+%         nc: structure containing the data read from netCDF via OpenDAP
+%         tBC_idx: index of the timestamp to be converted
 %         networkData: cell array containing information about the network
 %                      (metadata)
 %         networkFields: field names of the cell array containing
@@ -32,9 +34,9 @@
 % E-mail: lorenzo.corgnati@sp.ismar.cnr.it
 %%
 
-function [cA2C_err,networkData,ncFileNoPath,ncFilesize] = curAsc2netCDF_v22(totFilename,timestamp,networkData,networkFields,stationData,stationFields)
+function [cA2C_err,networkData,ncFileNoPath,ncFilesize] = MATROOS2netCDF_v22(nc,tBC_idx,networkData,networkFields,stationData,stationFields)
 
-disp(['[' datestr(now) '] - - ' 'curAsc2netCDF_v22.m started.']);
+disp(['[' datestr(now) '] - - ' 'MATROOS2netCDF_v22.m started.']);
 
 cA2C_err = 0;
 
@@ -44,90 +46,6 @@ warning('off', 'all');
 
 scaleFactor = 0.001;
 addOffset = 0;
-
-%%
-
-% %% Load the total file
-%
-% try
-%     % Load the total file as text
-%     ascFile = textread(totFilename,  '%s', 'whitespace', '\n');
-% catch err
-%     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-%     cA2C_err = 1;
-% end
-%
-% %%
-
-%% Retrieve the file header, the data table, the column names of the data table and site codes and coordinates
-
-try
-    % Read the number of contributing radial stations
-    nStation=textread(totFilename,'%u',1);
-    
-    %     % Read the file header and the data table
-    %     [cA2C_err, ascHeader, tableFields, ascTable] = curAscHeaderDataTable(ascFile);
-    % Read the data table
-    [IX,IY,U,V,KL,Acc_U,Acc_V] = textread(totFilename,'%u %u %f %f %d %f %f','headerlines', nStation+9);
-    ascTable=[IX,IY,U,V,KL,Acc_U,Acc_V];
-    tableFields={'IX'    'IY'    'U[m/s]'    'V[m/s]'    'KL'    'Acc_U[m/s]'    'Acc_V[m/s]'}; % TO BE CANCELLED AFTER JAN'S CONFIRMATION
-    
-    % Retrieve site codes and coordinates
-    %     [cA2C_err,sitesCodes,sitesLat,sitesLon] = curAscSiteCodeCoord(ascHeader);
-    for st_idx=1:nStation
-        [sitesCodes(st_idx,:),sitesLat(st_idx),NS,sitesLon(st_idx),EW] = textread(totFilename, '%*11c %*0c %*5c %*0c %*3c %*0c %s %*0c %f %*0c %s %*0c %f %*0c %s',1, 'headerlines',st_idx);
-        if(strcmp(NS,'South'))
-            sitesLat(st_idx) = -sitesLat(st_idx);
-        end
-        if(strcmp(EW,'West'))
-            sitesLon(st_idx) = -sitesLon(st_idx);
-        end
-        assert(sitesLat(st_idx)>=-90.0 & sitesLat(st_idx)<=90.0,[sitesCodes{st_idx,:} ' site latitude out of range']);
-        assert(sitesLon(st_idx)>=-180.0 & sitesLon(st_idx)<=180.0,[sitesCodes{st_idx,:} ' site longitude out of range']);
-    end
-    sitesCodes=char(sitesCodes);
-    sitesCodes = upper(sitesCodes(:,1:4));
-    
-    % Retrieve top-left point of the first gridcell, cell size and number of lon and lat gridcells
-    %     [cA2C_err,topLeftLat,topLeftLon, cellSize, lonCells,latCells] = curAscGridSpec(ascHeader);
-    [topLeftLat,topLeftLon, cellSize, lonCells,latCells]=textread(totFilename,'%f %f %f %u %u',1,'headerlines', nStation+4);
-    assert(topLeftLat>=-90.0 & topLeftLat<=90.0,'Grid top-left latitude out of range');
-    assert(topLeftLon>=-180.0 & topLeftLon<=180.0,'Grid top-left longitude out of range');
-catch err
-    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
-end
-
-%%
-
-
-%% Create the regular grid
-
-try
-    % Retrieve the lower left and upper right coordinates
-    [LLlon, LLlat] = km2lonlat(topLeftLon,topLeftLat,0,-(cellSize*latCells+1));
-    [URlon, URlat] = km2lonlat(topLeftLon,topLeftLat,(cellSize*lonCells+1),0);
-    
-    % Create the lon/lat regular grid
-    [gridLon, gridLat] = LonLat_grid([LLlon, LLlat], [URlon, URlat], cellSize, 'km');
-    gridLat = flipud(gridLat);
-catch err
-    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
-end
-
-%%
-
-%% Create the TUV structure and fill it with the total data
-
-try
-    % Fill the TUV structure with the total data
-    [cA2C_err,mat_tot] = curAscTable2TUV(ascTable,tableFields,timestamp,gridLon,gridLat,sitesLon,sitesLat);
-catch err
-    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
-    return
-end
 
 %%
 
@@ -241,6 +159,22 @@ if(cA2C_err == 0)
     
     %%
     
+    %% Retrive site coordinates and codes
+    
+    % Site codes
+    station_idIndex = find(not(cellfun('isempty', strfind(stationFields, 'station_id'))));
+    sitesCodes =  cell2mat(stationData(:,station_idIndex));
+    
+    % Site longitudes
+    site_lonIndex = find(not(cellfun('isempty', strfind(stationFields, 'site_lon'))));
+    sitesLon =  (cell2mat(stationData(:,site_lonIndex)))';
+
+    % Site latitudes
+    site_latIndex = find(not(cellfun('isempty', strfind(stationFields, 'site_lat'))));
+    sitesLat =  (cell2mat(stationData(:,site_latIndex)))';
+        
+    %%
+    
     %% Evaluate measurement vertical max and resolution
     
     try
@@ -258,68 +192,26 @@ if(cA2C_err == 0)
     % Set netcdf format
     ncfmt = 'netcdf4_classic';
     
-    % Set total data on a regular grid.
-    try
-        lonGrid = gridLon(1,:)';
-        latGrid = gridLat(:,1);
-        depth = 0;
-    catch err
-        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-        cA2C_err = 1;
-    end
-    
-    try
-        % Prepare variables
-        mat_tot.U_grid = NaN.*ones(length(lonGrid),length(latGrid),1);
-        mat_tot.V_grid = NaN.*ones(length(lonGrid),length(latGrid),1);
-        
-        mat_tot.U_std = NaN.*ones(length(lonGrid),length(latGrid),1);
-        mat_tot.V_std = NaN.*ones(length(lonGrid),length(latGrid),1);
-        
-        mat_tot.U_acc = NaN.*ones(length(lonGrid),length(latGrid),1);
-        mat_tot.V_acc = NaN.*ones(length(lonGrid),length(latGrid),1);
-        
-        mat_tot.GDOP = NaN.*ones(length(lonGrid),length(latGrid),1);
-    catch err
-        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-        cA2C_err = 1;
-    end
-    
     % Populate variables
     try
-        for i=1:length(mat_tot.LonLat(:,1))
-            lonGrid_idx = find(lonGrid==mat_tot.LonLat(i,1));
-            latGrid_idx = find(latGrid==mat_tot.LonLat(i,2));
-            % U and V components of current velocity
-            if (not(isnan(mat_tot.U(i))))
-                mat_tot.U_grid(lonGrid_idx,latGrid_idx,1) = mat_tot.U(i);
-            end
-            if (not(isnan(mat_tot.V(i))))
-                mat_tot.V_grid(lonGrid_idx,latGrid_idx,1) = mat_tot.V(i);
-            end
-            % U and V accuracies
-            if (not(isnan(mat_tot.ErrorEstimates(1,1).Uerr(i))))
-                mat_tot.U_acc(lonGrid_idx,latGrid_idx,1) = sqrt(mat_tot.ErrorEstimates(1,1).Uerr(i));
-            end
-            if (not(isnan(mat_tot.ErrorEstimates(1,1).Verr(i))))
-                mat_tot.V_acc(lonGrid_idx,latGrid_idx,1) = sqrt(mat_tot.ErrorEstimates(1,1).Verr(i));
-            end
-            % GDOP
-            if (not(isnan(mat_tot.ErrorEstimates(1,1).TotalErrors(i))))
-                mat_tot.GDOP(lonGrid_idx,latGrid_idx,1) = mat_tot.ErrorEstimates(1,1).TotalErrors(i);
-            end
-        end
+        % Time
+        mat_tot.TimeStamp = nc.time(tBC_idx);
+        % U and V components of current velocity
+        mat_tot.U_grid = nc.ewct(:,:,tBC_idx);
+        mat_tot.V_grid = nc.nsct(:,:,tBC_idx);
+        % U and V component standard deviation
+        mat_tot.U_std = NaN.*ones(length(nc.longitude),length(nc.latitude),1);
+        mat_tot.V_std = NaN.*ones(length(nc.longitude),length(nc.latitude),1);
+        % U and V accuracies
+        mat_tot.U_acc = nc.uacc(:,:,tBC_idx);
+        mat_tot.V_acc = nc.vacc(:,:,tBC_idx);
+        % GDOP
+        mat_tot.GDOP = sqrt(nc.gdopX.^2 + nc.gdopY.^2);
+        mat_tot.GDOP(isnan(mat_tot.U_grid)) = NaN;
     catch err
         display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         cA2C_err = 1;
     end
-    
-    % Set reference time
-    % if (T2C_err == 0)
-    %     timeref = datenum(1970,1,1);
-    %     time_units = ['seconds since ' datestr(timeref, 'yyyy-mm-dd') 'T' datestr(timeref, 'HH:MM:SS') 'Z'];
-    %     [year,mon,day,hr,minutes,sec] = datevec(timeref);
-    % end
     
     try
         timeref = datenum(1950,1,1);
@@ -378,8 +270,8 @@ if(cA2C_err == 0)
         end
         timeCoverageDuration = timeCoverageResolution;
         % Geospatial resolution
-        latRes = mean(diff(latGrid));
-        lonRes = mean(diff(lonGrid));
+        latRes = mean(diff(nc.latitude));
+        lonRes = mean(diff(nc.longitude));
     catch err
         display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         cA2C_err = 1;
@@ -389,6 +281,7 @@ if(cA2C_err == 0)
     try
         ts = datevec(mat_tot.TimeStamp);
         time_str = sprintf('%.4d_%.2d_%.2d_%.2d%.2d',ts(1,1),ts(1,2),ts(1,3),ts(1,4),ts(1,5));
+        timestamp = sprintf('%.4d %.2d %.2d %.2d %.2d 00',ts(1,1),ts(1,2),ts(1,3),ts(1,4),ts(1,5));
         outputPathIndex = find(not(cellfun('isempty', strfind(networkFields, 'total_HFRnetCDF_folder_path'))));
         network_idIndex = find(not(cellfun('isempty', strfind(networkFields, 'network_id'))));
         networkData{outputPathIndex} = strtrim(networkData{outputPathIndex});
@@ -471,8 +364,8 @@ if(cA2C_err == 0)
     try
         time_dim = size(mat_tot.TimeStamp,1);
         %         time_dim = netcdf.getConstant('unlimited');
-        lat_dim = size(latGrid,1);
-        lon_dim = size(lonGrid,1);
+        lat_dim = size(nc.latitude,1);
+        lon_dim = size(nc.longitude,1);
         depth_dim = 1;
         maxSite_dim = 50;
         maxInst_dim = length(EDMO_code);
@@ -536,7 +429,7 @@ if(cA2C_err == 0)
         % Time quality flag
         sdnTime_QCflag = 1;
         % Position quality flag
-        sdnPosition_QCflag = netcdf.getConstant('NC_FILL_BYTE').*int8(ones(length(lonGrid),length(latGrid),1));
+        sdnPosition_QCflag = netcdf.getConstant('NC_FILL_BYTE').*int8(ones(length(nc.longitude),length(nc.latitude),1));
         sdnPosition_QCflag(~isnan(mat_tot.U_grid)) = 1;
         
         % Depth quality flag
@@ -1153,8 +1046,8 @@ if(cA2C_err == 0)
         %% Writes values in variables
         %         ncwrite(ncfile,'TIME',int32((mat_tot.TimeStamp-timeref)*86400));
         ncwrite(ncfile,'TIME',mat_tot.TimeStamp-timeref);
-        ncwrite(ncfile,'LATITUDE',latGrid);
-        ncwrite(ncfile,'LONGITUDE',lonGrid);
+        ncwrite(ncfile,'LATITUDE',nc.latitude);
+        ncwrite(ncfile,'LONGITUDE',nc.longitude);
         ncwrite(ncfile,'crs',0);
         ncwrite(ncfile,'SDN_CRUISE',site_code');
         ncwrite(ncfile,'SDN_STATION',platform_code');
@@ -1162,7 +1055,7 @@ if(cA2C_err == 0)
         ncwrite(ncfile,'SDN_EDMO_CODE',EDMO_code');
         ncwrite(ncfile,'SDN_REFERENCES',TDS_catalog');
         ncwrite(ncfile,'SDN_XLINK',xlink');
-        ncwrite(ncfile,'DEPH',depth);
+        ncwrite(ncfile,'DEPH',nc.depth);
         ncwrite(ncfile,'EWCT',mat_tot.U_grid);
         ncwrite(ncfile,'NSCT',mat_tot.V_grid);
         ncwrite(ncfile,'EWCS',mat_tot.U_std);
@@ -1325,7 +1218,7 @@ if(cA2C_err == 0)
 end
 
 if(cA2C_err==0)
-    disp(['[' datestr(now) '] - - ' 'curAsc2netCDF_v22.m successfully executed.']);
+    disp(['[' datestr(now) '] - - ' 'MATROOS2netCDF_v22.m successfully executed.']);
 end
 
 return

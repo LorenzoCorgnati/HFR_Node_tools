@@ -153,7 +153,7 @@ try
     % Build the cumulative institution website list
     websiteList = [NT_institution_website; ST_institution_website];
     institution_websites = websiteList(ia);
-    institution_websiteStr = strjoin(institution_websites,'; ');
+    institution_websiteStr = strjoin(institution_websites,' ');
     
 catch err
     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);

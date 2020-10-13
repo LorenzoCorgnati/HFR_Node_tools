@@ -1,13 +1,15 @@
-%% curAsc2netCDF_v22.m
-% This function converts hourly total files from native WERA ASCII format
-% .cur_asc in netCDF-4 format according to the European common data and metadata
+%% US2netCDF_v22.m
+% This function retrieves data from the HFR-US networks via OpenDAP,
+% selects the data to be converted according to the processing time
+% interval and converts total files from the US CORDC netCDF format to the
+% standard netCDF-4 format according to the European common data and metadata
 % model integrating CMEMS-INSTAC and SDC CF extension requirements.
 % v2.2 complies with Copernicus-InSituTAC-FormatManual-1.4, 
 % Copernicus-InSituTAC-SRD-1.41 and Copernicus-InSituTAC-ParametersList-3.2.0
 
 % INPUT:
-%         totFilename: filename of the total file to be converted (including full path)
-%         timestamp: timestamp of the total file to be converted
+%         nc: structure containing the data read from netCDF via OpenDAP
+%         tBC_idx: index of the timestamp to be converted
 %         networkData: cell array containing information about the network
 %                      (metadata)
 %         networkFields: field names of the cell array containing
@@ -32,9 +34,9 @@
 % E-mail: lorenzo.corgnati@sp.ismar.cnr.it
 %%
 
-function [cA2C_err,networkData,ncFileNoPath,ncFilesize] = curAsc2netCDF_v22(totFilename,timestamp,networkData,networkFields,stationData,stationFields)
+function [cA2C_err,networkData,ncFileNoPath,ncFilesize] = US2netCDF_v22(nc,tBC_idx,networkData,networkFields,stationData,stationFields)
 
-disp(['[' datestr(now) '] - - ' 'curAsc2netCDF_v22.m started.']);
+disp(['[' datestr(now) '] - - ' 'US2netCDF_v22.m started.']);
 
 cA2C_err = 0;
 
@@ -47,91 +49,7 @@ addOffset = 0;
 
 %%
 
-% %% Load the total file
-%
-% try
-%     % Load the total file as text
-%     ascFile = textread(totFilename,  '%s', 'whitespace', '\n');
-% catch err
-%     disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-%     cA2C_err = 1;
-% end
-%
-% %%
-
-%% Retrieve the file header, the data table, the column names of the data table and site codes and coordinates
-
-try
-    % Read the number of contributing radial stations
-    nStation=textread(totFilename,'%u',1);
-    
-    %     % Read the file header and the data table
-    %     [cA2C_err, ascHeader, tableFields, ascTable] = curAscHeaderDataTable(ascFile);
-    % Read the data table
-    [IX,IY,U,V,KL,Acc_U,Acc_V] = textread(totFilename,'%u %u %f %f %d %f %f','headerlines', nStation+9);
-    ascTable=[IX,IY,U,V,KL,Acc_U,Acc_V];
-    tableFields={'IX'    'IY'    'U[m/s]'    'V[m/s]'    'KL'    'Acc_U[m/s]'    'Acc_V[m/s]'}; % TO BE CANCELLED AFTER JAN'S CONFIRMATION
-    
-    % Retrieve site codes and coordinates
-    %     [cA2C_err,sitesCodes,sitesLat,sitesLon] = curAscSiteCodeCoord(ascHeader);
-    for st_idx=1:nStation
-        [sitesCodes(st_idx,:),sitesLat(st_idx),NS,sitesLon(st_idx),EW] = textread(totFilename, '%*11c %*0c %*5c %*0c %*3c %*0c %s %*0c %f %*0c %s %*0c %f %*0c %s',1, 'headerlines',st_idx);
-        if(strcmp(NS,'South'))
-            sitesLat(st_idx) = -sitesLat(st_idx);
-        end
-        if(strcmp(EW,'West'))
-            sitesLon(st_idx) = -sitesLon(st_idx);
-        end
-        assert(sitesLat(st_idx)>=-90.0 & sitesLat(st_idx)<=90.0,[sitesCodes{st_idx,:} ' site latitude out of range']);
-        assert(sitesLon(st_idx)>=-180.0 & sitesLon(st_idx)<=180.0,[sitesCodes{st_idx,:} ' site longitude out of range']);
-    end
-    sitesCodes=char(sitesCodes);
-    sitesCodes = upper(sitesCodes(:,1:4));
-    
-    % Retrieve top-left point of the first gridcell, cell size and number of lon and lat gridcells
-    %     [cA2C_err,topLeftLat,topLeftLon, cellSize, lonCells,latCells] = curAscGridSpec(ascHeader);
-    [topLeftLat,topLeftLon, cellSize, lonCells,latCells]=textread(totFilename,'%f %f %f %u %u',1,'headerlines', nStation+4);
-    assert(topLeftLat>=-90.0 & topLeftLat<=90.0,'Grid top-left latitude out of range');
-    assert(topLeftLon>=-180.0 & topLeftLon<=180.0,'Grid top-left longitude out of range');
-catch err
-    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
-end
-
-%%
-
-
-%% Create the regular grid
-
-try
-    % Retrieve the lower left and upper right coordinates
-    [LLlon, LLlat] = km2lonlat(topLeftLon,topLeftLat,0,-(cellSize*latCells+1));
-    [URlon, URlat] = km2lonlat(topLeftLon,topLeftLat,(cellSize*lonCells+1),0);
-    
-    % Create the lon/lat regular grid
-    [gridLon, gridLat] = LonLat_grid([LLlon, LLlat], [URlon, URlat], cellSize, 'km');
-    gridLat = flipud(gridLat);
-catch err
-    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
-end
-
-%%
-
-%% Create the TUV structure and fill it with the total data
-
-try
-    % Fill the TUV structure with the total data
-    [cA2C_err,mat_tot] = curAscTable2TUV(ascTable,tableFields,timestamp,gridLon,gridLat,sitesLon,sitesLat);
-catch err
-    disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-    cA2C_err = 1;
-    return
-end
-
-%%
-
-%% Retrieve EDMO codes and institution names
+%% Retrieve EDMO codes, institution names, institution websites and system manufacturers
 if(cA2C_err == 0)
     try
         % Find the EDMO_code field from network data
@@ -178,6 +96,15 @@ if(cA2C_err == 0)
         institution_websites = websiteList(ia);
         institution_websiteStr = strjoin(institution_websites,' ');
         
+        % Find the manufacturer field from station data
+        ST_manufacturerIndex = find(not(cellfun('isempty', strfind(stationFields, 'manufacturer'))));
+        ST_manufacturer = stationData(:,ST_manufacturerIndex);
+        ST_manufacturer(cellfun('isempty',ST_manufacturer)) = [];
+        
+        % Build the cumulative manufacturer list
+        manufacturerList = uniqueStrCell(ST_manufacturer);
+        sensorAtt = strjoin(manufacturerList,'; ');
+        
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         cA2C_err = 1;
@@ -189,15 +116,24 @@ if(cA2C_err == 0)
     try
         % Find the last_calibration_date field from station data
         ST_last_calibration_dateIndex = find(not(cellfun('isempty', strfind(stationFields, 'last_calibration_date'))));
-        ST_last_calibration_date = datenum(stationData(:,ST_last_calibration_dateIndex));
-        ST_last_calibration_date = ST_last_calibration_date(ST_last_calibration_date~=0);
+        ST_last_calibration_date = stationData(:,ST_last_calibration_dateIndex);
+        ST_last_calibration_date(find(contains(stationData(:,ST_last_calibration_dateIndex),'null'))) = {'00-Jan-0000'};
+        ST_last_calibration_date = datenum(ST_last_calibration_date);
         ST_station_idIndex = find(not(cellfun('isempty', strfind(stationFields, 'station_id'))));
         ST_sitesCodes = stationData(:,ST_station_idIndex);
         lastPatternStr = [ST_sitesCodes{1,:} ': '];
         for lcd_idx=2:length(ST_last_calibration_date)
-            lastPatternStr = [lastPatternStr datestr(ST_last_calibration_date(lcd_idx-1), 'yyyy-mm-dd') 'T' datestr(ST_last_calibration_date(lcd_idx-1), 'HH:MM:SS') 'Z; ' ST_sitesCodes{lcd_idx,:} ': '];
+            if(ST_last_calibration_date(lcd_idx-1)~=0)
+                lastPatternStr = [lastPatternStr datestr(ST_last_calibration_date(lcd_idx-1), 'yyyy-mm-dd') 'T' datestr(ST_last_calibration_date(lcd_idx-1), 'HH:MM:SS') 'Z; ' ST_sitesCodes{lcd_idx,:} ': '];
+            else
+                lastPatternStr = [lastPatternStr 'N/A; ' ST_sitesCodes{lcd_idx,:} ': '];
+            end
         end
-        lastPatternStr = [lastPatternStr datestr(ST_last_calibration_date(lcd_idx), 'yyyy-mm-dd') 'T' datestr(ST_last_calibration_date(lcd_idx), 'HH:MM:SS') 'Z'];
+        if(ST_last_calibration_date(lcd_idx)~=0)
+            lastPatternStr = [lastPatternStr datestr(ST_last_calibration_date(lcd_idx), 'yyyy-mm-dd') 'T' datestr(ST_last_calibration_date(lcd_idx), 'HH:MM:SS') 'Z'];
+        else
+            lastPatternStr = [lastPatternStr 'N/A'];
+        end
         
         % Find the DoA from station data
         ST_DoAIndex = find(not(cellfun('isempty', strfind(stationFields, 'DoA_estimation_method'))));
@@ -241,6 +177,22 @@ if(cA2C_err == 0)
     
     %%
     
+    %% Retrive site coordinates and codes
+    
+    % Site codes
+    station_idIndex = find(not(cellfun('isempty', strfind(stationFields, 'station_id'))));
+    sitesCodes =  cell2mat(stationData(:,station_idIndex));
+    
+    % Site longitudes
+    site_lonIndex = find(not(cellfun('isempty', strfind(stationFields, 'site_lon'))));
+    sitesLon =  (cell2mat(stationData(:,site_lonIndex)))';
+    
+    % Site latitudes
+    site_latIndex = find(not(cellfun('isempty', strfind(stationFields, 'site_lat'))));
+    sitesLat =  (cell2mat(stationData(:,site_latIndex)))';
+    
+    %%
+    
     %% Evaluate measurement vertical max and resolution
     
     try
@@ -258,68 +210,28 @@ if(cA2C_err == 0)
     % Set netcdf format
     ncfmt = 'netcdf4_classic';
     
-    % Set total data on a regular grid.
-    try
-        lonGrid = gridLon(1,:)';
-        latGrid = gridLat(:,1);
-        depth = 0;
-    catch err
-        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-        cA2C_err = 1;
-    end
-    
-    try
-        % Prepare variables
-        mat_tot.U_grid = NaN.*ones(length(lonGrid),length(latGrid),1);
-        mat_tot.V_grid = NaN.*ones(length(lonGrid),length(latGrid),1);
-        
-        mat_tot.U_std = NaN.*ones(length(lonGrid),length(latGrid),1);
-        mat_tot.V_std = NaN.*ones(length(lonGrid),length(latGrid),1);
-        
-        mat_tot.U_acc = NaN.*ones(length(lonGrid),length(latGrid),1);
-        mat_tot.V_acc = NaN.*ones(length(lonGrid),length(latGrid),1);
-        
-        mat_tot.GDOP = NaN.*ones(length(lonGrid),length(latGrid),1);
-    catch err
-        disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
-        cA2C_err = 1;
-    end
-    
     % Populate variables
     try
-        for i=1:length(mat_tot.LonLat(:,1))
-            lonGrid_idx = find(lonGrid==mat_tot.LonLat(i,1));
-            latGrid_idx = find(latGrid==mat_tot.LonLat(i,2));
-            % U and V components of current velocity
-            if (not(isnan(mat_tot.U(i))))
-                mat_tot.U_grid(lonGrid_idx,latGrid_idx,1) = mat_tot.U(i);
-            end
-            if (not(isnan(mat_tot.V(i))))
-                mat_tot.V_grid(lonGrid_idx,latGrid_idx,1) = mat_tot.V(i);
-            end
-            % U and V accuracies
-            if (not(isnan(mat_tot.ErrorEstimates(1,1).Uerr(i))))
-                mat_tot.U_acc(lonGrid_idx,latGrid_idx,1) = sqrt(mat_tot.ErrorEstimates(1,1).Uerr(i));
-            end
-            if (not(isnan(mat_tot.ErrorEstimates(1,1).Verr(i))))
-                mat_tot.V_acc(lonGrid_idx,latGrid_idx,1) = sqrt(mat_tot.ErrorEstimates(1,1).Verr(i));
-            end
-            % GDOP
-            if (not(isnan(mat_tot.ErrorEstimates(1,1).TotalErrors(i))))
-                mat_tot.GDOP(lonGrid_idx,latGrid_idx,1) = mat_tot.ErrorEstimates(1,1).TotalErrors(i);
-            end
-        end
+        % Time
+        mat_tot.TimeStamp = nc.time(tBC_idx);
+        % Latitude and longitude
+        mat_tot.gridLat = repmat(nc.latitude,1,length(nc.longitude))';
+        mat_tot.gridLon = repmat(nc.longitude,1,length(nc.latitude));
+        % U and V components of current velocity
+        mat_tot.U_grid = nc.ewct(:,:,tBC_idx);
+        mat_tot.V_grid = nc.nsct(:,:,tBC_idx);
+        % U and V component standard deviation
+        mat_tot.U_std = NaN.*ones(length(nc.longitude),length(nc.latitude),1);
+        mat_tot.V_std = NaN.*ones(length(nc.longitude),length(nc.latitude),1);
+        % GDOP
+        mat_tot.GDOP = sqrt(nc.gdopX(:,:,tBC_idx).^2 + nc.gdopY(:,:,tBC_idx).^2);
+        mat_tot.GDOP(isnan(mat_tot.U_grid)) = NaN;
+        % DDNS
+        mat_tot.DDENS = nc.ddens(:,:,tBC_idx);
     catch err
         display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         cA2C_err = 1;
     end
-    
-    % Set reference time
-    % if (T2C_err == 0)
-    %     timeref = datenum(1970,1,1);
-    %     time_units = ['seconds since ' datestr(timeref, 'yyyy-mm-dd') 'T' datestr(timeref, 'HH:MM:SS') 'Z'];
-    %     [year,mon,day,hr,minutes,sec] = datevec(timeref);
-    % end
     
     try
         timeref = datenum(1950,1,1);
@@ -378,8 +290,8 @@ if(cA2C_err == 0)
         end
         timeCoverageDuration = timeCoverageResolution;
         % Geospatial resolution
-        latRes = mean(diff(latGrid));
-        lonRes = mean(diff(lonGrid));
+        latRes = mean(diff(nc.latitude));
+        lonRes = mean(diff(nc.longitude));
     catch err
         display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         cA2C_err = 1;
@@ -389,6 +301,7 @@ if(cA2C_err == 0)
     try
         ts = datevec(mat_tot.TimeStamp);
         time_str = sprintf('%.4d_%.2d_%.2d_%.2d%.2d',ts(1,1),ts(1,2),ts(1,3),ts(1,4),ts(1,5));
+        timestamp = sprintf('%.4d %.2d %.2d %.2d %.2d 00',ts(1,1),ts(1,2),ts(1,3),ts(1,4),ts(1,5));
         outputPathIndex = find(not(cellfun('isempty', strfind(networkFields, 'total_HFRnetCDF_folder_path'))));
         network_idIndex = find(not(cellfun('isempty', strfind(networkFields, 'network_id'))));
         networkData{outputPathIndex} = strtrim(networkData{outputPathIndex});
@@ -471,15 +384,19 @@ if(cA2C_err == 0)
     try
         time_dim = size(mat_tot.TimeStamp,1);
         %         time_dim = netcdf.getConstant('unlimited');
-        lat_dim = size(latGrid,1);
-        lon_dim = size(lonGrid,1);
+        lat_dim = size(nc.latitude,1);
+        lon_dim = size(nc.longitude,1);
         depth_dim = 1;
-        maxSite_dim = 50;
+        if(strcmp(networkData{network_idIndex},'HFR-US-WestCoast') || strcmp(networkData{network_idIndex},'HFR-US-EastGulfCoast'))
+            maxSite_dim = 150;
+        else
+            maxSite_dim = 50;
+        end
         maxInst_dim = length(EDMO_code);
         refMax_dim = 1;
         string15_dim = 15;
-        string50_dim = 50;
-        string250_dim = 250;
+        string75_dim = 75;
+        string300_dim = 300;
     catch err
         display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         cA2C_err = 1;
@@ -523,7 +440,7 @@ if(cA2C_err == 0)
         Total_QC_params.TempDerThr.hour2 = [ncFilePath(1:length(ncFilePath)-length(twoHoursBefore.fP)) twoHoursBefore.fP filesep networkData{network_idIndex} '-Total_' twoHoursBefore.TS '.nc'];
         Total_QC_params.TempDerThr.hour1 = [ncFilePath(1:length(ncFilePath)-length(oneHourBefore.fP)) oneHourBefore.fP filesep networkData{network_idIndex} '-Total_' oneHourBefore.TS '.nc'];
         
-        [overall_QCflag, varianceThreshold_QCflag, GDOP_QCflag, dataDensity_QCflag, velocityThreshold_QCflag] = curAscTotalQCtests_v11(mat_tot, Total_QC_params);
+        [overall_QCflag, varianceThreshold_QCflag, temporalDerivativeThreshold_QCflag, GDOP_QCflag, dataDensity_QCflag, velocityThreshold_QCflag] = tuvTotalQCtests_v11(mat_tot, Total_QC_params);
     catch err
         disp(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
         cA2C_err = 1;
@@ -536,7 +453,7 @@ if(cA2C_err == 0)
         % Time quality flag
         sdnTime_QCflag = 1;
         % Position quality flag
-        sdnPosition_QCflag = netcdf.getConstant('NC_FILL_BYTE').*int8(ones(length(lonGrid),length(latGrid),1));
+        sdnPosition_QCflag = netcdf.getConstant('NC_FILL_BYTE').*int8(ones(length(nc.longitude),length(nc.latitude),1));
         sdnPosition_QCflag(~isnan(mat_tot.U_grid)) = 1;
         
         % Depth quality flag
@@ -570,17 +487,17 @@ if(cA2C_err == 0)
             'Format',ncfmt);
         
         nccreate(ncfile,'SDN_CRUISE',...
-            'Dimensions',{'STRING50',string50_dim, 'TIME',time_dim},...
+            'Dimensions',{'STRING75',string75_dim, 'TIME',time_dim},...
             'Datatype','char',...
             'Format',ncfmt);
         
         nccreate(ncfile,'SDN_STATION',...
-            'Dimensions',{'STRING50',string50_dim, 'TIME',time_dim},...
+            'Dimensions',{'STRING75',string75_dim, 'TIME',time_dim},...
             'Datatype','char',...
             'Format',ncfmt);
         
         nccreate(ncfile,'SDN_LOCAL_CDI_ID',...
-            'Dimensions',{'STRING50',string50_dim, 'TIME',time_dim},...
+            'Dimensions',{'STRING75',string75_dim, 'TIME',time_dim},...
             'Datatype','char',...
             'Format',ncfmt);
         
@@ -590,12 +507,12 @@ if(cA2C_err == 0)
             'Format',ncfmt);
         
         nccreate(ncfile,'SDN_REFERENCES',...
-            'Dimensions',{'STRING200', string250_dim, 'TIME',time_dim},...
+            'Dimensions',{'STRING300', string300_dim, 'TIME',time_dim},...
             'Datatype','char',...
             'Format',ncfmt);
         
         nccreate(ncfile,'SDN_XLINK',...
-            'Dimensions',{'STRING200',string250_dim, 'REFMAX',refMax_dim, 'TIME',time_dim},...
+            'Dimensions',{'STRING300',string300_dim, 'REFMAX',refMax_dim, 'TIME',time_dim},...
             'Datatype','char',...
             'Format',ncfmt);
         
@@ -624,18 +541,6 @@ if(cA2C_err == 0)
             'Format',ncfmt);
         
         nccreate(ncfile,'NSCS',...
-            'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPTH', depth_dim, 'TIME',time_dim},...
-            'Datatype','int16',...
-            'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
-            'Format',ncfmt);
-        
-        nccreate(ncfile,'UACC',...
-            'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPTH', depth_dim, 'TIME',time_dim},...
-            'Datatype','int16',...
-            'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
-            'Format',ncfmt);
-        
-        nccreate(ncfile,'VACC',...
             'Dimensions',{'LONGITUDE',lon_dim,'LATITUDE',lat_dim, 'DEPTH', depth_dim, 'TIME',time_dim},...
             'Datatype','int16',...
             'FillValue',netcdf.getConstant('NC_FILL_SHORT'),...
@@ -891,38 +796,6 @@ if(cA2C_err == 0)
         ncwriteatt(ncfile,'NSCS','ancillary_variables',char('QCflag, VART_QC'));
         ncwriteatt(ncfile,'NSCS','data_mode',char('R'));
         
-        ncwriteatt(ncfile,'UACC','long_name',char('Accuracy of surface eastward sea water velocity'));
-        ncwriteatt(ncfile,'UACC','standard_name',char(''));
-        ncwriteatt(ncfile,'UACC','units',char('m s-1'));
-        %         ncwriteatt(ncfile,'UACC','valid_range',int16([(-10-addOffset)./scaleFactor, (10-addOffset)./scaleFactor]));
-        ncwriteatt(ncfile,'UACC','valid_min',int16((-10-addOffset)./scaleFactor));
-        ncwriteatt(ncfile,'UACC','valid_max',int16((10-addOffset)./scaleFactor));
-        ncwriteatt(ncfile,'UACC','coordinates',char('TIME DEPTH LATITUDE LONGITUDE'));
-        ncwriteatt(ncfile,'UACC','scale_factor',double(scaleFactor));
-        ncwriteatt(ncfile,'UACC','add_offset',double(addOffset));
-        ncwriteatt(ncfile,'UACC','sdn_parameter_name',char(''));
-        ncwriteatt(ncfile,'UACC','sdn_parameter_urn',char(''));
-        ncwriteatt(ncfile,'UACC','sdn_uom_name',char('Metres per second'));
-        ncwriteatt(ncfile,'UACC','sdn_uom_urn',char('SDN:P06::UVAA'));
-        ncwriteatt(ncfile,'UACC','ancillary_variables',char('QCflag, VART_QC'));
-        ncwriteatt(ncfile,'UACC','data_mode',char('R'));
-        
-        ncwriteatt(ncfile,'VACC','long_name',char('Accuracy of surface northward sea water velocity'));
-        ncwriteatt(ncfile,'VACC','standard_name',char(''));
-        ncwriteatt(ncfile,'VACC','units',char('m s-1'));
-        %         ncwriteatt(ncfile,'VACC','valid_range',int16([(-10-addOffset)./scaleFactor, (10-addOffset)./scaleFactor]));
-        ncwriteatt(ncfile,'VACC','valid_min',int16((-10-addOffset)./scaleFactor));
-        ncwriteatt(ncfile,'VACC','valid_max',int16((10-addOffset)./scaleFactor));
-        ncwriteatt(ncfile,'VACC','coordinates',char('TIME DEPTH LATITUDE LONGITUDE'));
-        ncwriteatt(ncfile,'VACC','scale_factor',double(scaleFactor));
-        ncwriteatt(ncfile,'VACC','add_offset',double(addOffset));
-        ncwriteatt(ncfile,'VACC','sdn_parameter_name',char(''));
-        ncwriteatt(ncfile,'VACC','sdn_parameter_urn',char(''));
-        ncwriteatt(ncfile,'VACC','sdn_uom_name',char('Metres per second'));
-        ncwriteatt(ncfile,'VACC','sdn_uom_urn',char('SDN:P06::UVAA'));
-        ncwriteatt(ncfile,'VACC','ancillary_variables',char('QCflag, VART_QC'));
-        ncwriteatt(ncfile,'VACC','data_mode',char('R'));
-        
         ncwriteatt(ncfile,'GDOP','long_name',char('Geometrical dilution of precision'));
         ncwriteatt(ncfile,'GDOP','standard_name',char(''));
         ncwriteatt(ncfile,'GDOP','units',char('1'));
@@ -1153,8 +1026,8 @@ if(cA2C_err == 0)
         %% Writes values in variables
         %         ncwrite(ncfile,'TIME',int32((mat_tot.TimeStamp-timeref)*86400));
         ncwrite(ncfile,'TIME',mat_tot.TimeStamp-timeref);
-        ncwrite(ncfile,'LATITUDE',latGrid);
-        ncwrite(ncfile,'LONGITUDE',lonGrid);
+        ncwrite(ncfile,'LATITUDE',nc.latitude);
+        ncwrite(ncfile,'LONGITUDE',nc.longitude);
         ncwrite(ncfile,'crs',0);
         ncwrite(ncfile,'SDN_CRUISE',site_code');
         ncwrite(ncfile,'SDN_STATION',platform_code');
@@ -1162,13 +1035,11 @@ if(cA2C_err == 0)
         ncwrite(ncfile,'SDN_EDMO_CODE',EDMO_code');
         ncwrite(ncfile,'SDN_REFERENCES',TDS_catalog');
         ncwrite(ncfile,'SDN_XLINK',xlink');
-        ncwrite(ncfile,'DEPH',depth);
+        ncwrite(ncfile,'DEPH',nc.depth);
         ncwrite(ncfile,'EWCT',mat_tot.U_grid);
         ncwrite(ncfile,'NSCT',mat_tot.V_grid);
         ncwrite(ncfile,'EWCS',mat_tot.U_std);
         ncwrite(ncfile,'NSCS',mat_tot.V_std);
-        ncwrite(ncfile,'UACC',mat_tot.U_acc);
-        ncwrite(ncfile,'VACC',mat_tot.V_acc);
         ncwrite(ncfile,'GDOP',mat_tot.GDOP);
         ncwrite(ncfile,'NARX',length(sitesLat));
         ncwrite(ncfile,'NATX',length(sitesLat));
@@ -1182,7 +1053,7 @@ if(cA2C_err == 0)
         ncwrite(ncfile,'POSITION_QC',sdnPosition_QCflag);
         ncwrite(ncfile,'DEPH_QC',sdnDepth_QCflag);
         ncwrite(ncfile,'QCflag',overall_QCflag);
-        ncwrite(ncfile,'VART_QC',varianceThreshold_QCflag);
+        ncwrite(ncfile,'VART_QC',temporalDerivativeThreshold_QCflag);
         ncwrite(ncfile,'GDOP_QC',GDOP_QCflag);
         ncwrite(ncfile,'DDNS_QC',dataDensity_QCflag);
         ncwrite(ncfile,'CSPD_QC',velocityThreshold_QCflag);
@@ -1296,7 +1167,7 @@ if(cA2C_err == 0)
         ncwriteatt(ncfile,'/','metadata_contact',char('lorenzo.corgnati@sp.ismar.cnr.it'));
         ncwriteatt(ncfile,'/','metadata_date_stamp',char(dateCreated));
         ncwriteatt(ncfile,'/','standard_name_vocabulary',char('NetCDF Climate and Forecast (CF) Metadata Convention Standard Name Table Version 1.6'));
-        ncwriteatt(ncfile,'/','sensor',char('WERA'));
+        ncwriteatt(ncfile,'/','sensor',char(sensorAtt));
         ncwriteatt(ncfile,'/','institution_references',char(institution_websiteStr));
         ncwriteatt(ncfile,'/','date_issued',char(dateCreated));
         ncwriteatt(ncfile,'/','software_name',char('HFR_Node__Centralized_Processing'));
@@ -1325,7 +1196,7 @@ if(cA2C_err == 0)
 end
 
 if(cA2C_err==0)
-    disp(['[' datestr(now) '] - - ' 'curAsc2netCDF_v22.m successfully executed.']);
+    disp(['[' datestr(now) '] - - ' 'US2netCDF_v22.m successfully executed.']);
 end
 
 return
