@@ -395,13 +395,13 @@ try
                         toBeCombinedStationIndex = find(not(cellfun('isempty', toBeCombinedStationIndexC)));
                         try
                             if (strcmp(toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),extensionIndex}, '.ruv')) % Codar data
-                                % v2.1.2
-                                [R2C_err,network_data(network_idx,:),station_data(toBeCombinedStationIndex,:),radOutputFilename,radOutputFilesize,station_tbUpdateFlag] = ruv2netCDF_v33(RADIAL(ruv_idx),network_data(network_idx,:),network_columnNames,station_data(toBeCombinedStationIndex,:),station_columnNames,toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),timeStampIndex});
-                                disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1.2 file successfully created and stored.']);
+                                % v2.2
+                                [R2C_err,network_data(network_idx,:),station_data(toBeCombinedStationIndex,:),radOutputFilename,radOutputFilesize,station_tbUpdateFlag] = ruv2netCDF_v22(RADIAL(ruv_idx),network_data(network_idx,:),network_columnNames,station_data(toBeCombinedStationIndex,:),station_columnNames,toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),timeStampIndex});
+                                disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.2 file successfully created and stored.']);
                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
                             elseif (strcmp(toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),extensionIndex}, '.crad_ascii')) % WERA data
-                                [R2C_err,network_data(network_idx,:),radOutputFilename,radOutputFilesize] = cradAscii2netCDF_v33(radFiles{ruv_idx},network_data(network_idx,:),network_columnNames,station_data(toBeCombinedStationIndex,:),station_columnNames,toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),timeStampIndex});
-                                disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.1.2 file successfully created and stored.']);
+                                [R2C_err,network_data(network_idx,:),radOutputFilename,radOutputFilesize] = cradAscii2netCDF_v22(radFiles{ruv_idx},network_data(network_idx,:),network_columnNames,station_data(toBeCombinedStationIndex,:),station_columnNames,toBeCombinedRadials_data{toBeCombinedRadialIndices(indices_idx),timeStampIndex});
+                                disp(['[' datestr(now) '] - - ' radOutputFilename ' radial netCDF v2.2 file successfully created and stored.']);
                                 contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
                                 station_tbUpdateFlag = 0; % WERA radial files do not contain information about calibration
                                 numActiveStations = length(toBeCombinedRadialIndices); % WERA radials are not combined
@@ -486,8 +486,8 @@ try
                                 ts = datevec(TUVmask.TimeStamp);
                                 time_str = sprintf('%.4d_%.2d_%.2d_%.2d%.2d',ts(1,1),ts(1,2),ts(1,3),ts(1,4),ts(1,5));
                                 network_data{network_idx,matPathIndex} = strtrim(network_data{network_idx,matPathIndex});
-                                % v2.1.2
-                                [tFB_err, matFilePath] = totalFolderBuilder_v212(network_data{network_idx,matPathIndex}, toBeCombinedRadials_data{radial_idx,timeStampIndex});
+                                % v2.2
+                                [tFB_err, matFilePath] = totalFolderBuilder_v22(network_data{network_idx,matPathIndex}, toBeCombinedRadials_data{radial_idx,timeStampIndex});
                                 save([matFilePath filesep network_data{network_idx,network_idIndex} '-Total_' time_str '.mat'], 'TUVmask');
                                 disp(['[' datestr(now) '] - - ' network_data{network_idx,network_idIndex} '-Total_' time_str '.mat' ' file successfully saved.']);
                             catch err
@@ -499,9 +499,9 @@ try
                         % Create the total netCDF file according to the European standard data model
                         try
                             if (strcmp(extensions, '.ruv')) % Codar data
-                                % v2.1.2
-                                [T2C_err,network_data(network_idx,:),station_data(contrSitesIndices,:),totOutputFilename,totOutputFilesize] = tot2netCDF_v33(TUVmask,network_data(network_idx,:),network_columnNames,station_data(contrSitesIndices,:),station_columnNames,toBeCombinedRadials_data{radial_idx,timeStampIndex},station_data);
-                                disp(['[' datestr(now) '] - - ' totOutputFilename ' total netCDF v2.1.2 file successfully created and stored.']);
+                                % v2.2
+                                [T2C_err,network_data(network_idx,:),station_data(contrSitesIndices,:),totOutputFilename,totOutputFilesize] = tot2netCDF_v22(TUVmask,network_data(network_idx,:),network_columnNames,station_data(contrSitesIndices,:),station_columnNames,toBeCombinedRadials_data{radial_idx,timeStampIndex},station_data);
+                                disp(['[' datestr(now) '] - - ' totOutputFilename ' total netCDF v2.2 file successfully created and stored.']);
                             elseif (strcmp(toBeCombinedRadials_data{toBeCombinedStationIndex,extensionIndex}, 'crad_ascii')) % WERA data
                                 % NOTHING TO DO
                             end
