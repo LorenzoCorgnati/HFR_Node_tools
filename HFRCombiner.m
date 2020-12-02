@@ -391,6 +391,7 @@ try
                     
                     % Convert the radial files into netCDF according to the European standard data model
                     for ruv_idx=1:length(toBeCombinedRadialIndices)
+                        HFRC_err = 0;
                         toBeCombinedStationIndexC = strfind(station_data(:,STstation_idIndex), toBeCombinedRadials_data{toBeCombinedRadialIndices(ruv_idx),RIstation_idIndex});
                         toBeCombinedStationIndex = find(not(cellfun('isempty', toBeCombinedStationIndexC)));
                         try
@@ -408,6 +409,7 @@ try
                             end
                         catch err
                             display(['[' datestr(now) '] - - ERROR in ' mfilename ' -> ' err.message]);
+                            contrSitesIndices(ruv_idx) = toBeCombinedStationIndex;
                             HFRC_err = 2;
                         end
                         
@@ -461,7 +463,7 @@ try
                     end
                     
                     % Combine the Codar radial files into total
-                    if((size(radFiles,2)>1) && (HFRC_err~=2))
+                    if((size(radFiles,2)>1) && (HFRC_err~=1))
                         % Check if all the radials have the same extension
                         for ext_idx=1:length(toBeCombinedRadialIndices)
                             extensions{ext_idx} = toBeCombinedRadials_data{toBeCombinedRadialIndices(ext_idx),extensionIndex};
