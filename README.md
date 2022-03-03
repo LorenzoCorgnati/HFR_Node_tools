@@ -40,6 +40,8 @@ The required toolboxes are:
 - Rdir (http://www.mathworks.com/matlabcentral/fileexchange/19550-recursive-directory-listing);
 - uniqueStrCell (https://www.mathworks.com/matlabcentral/fileexchange/50476-unique-for-cell-array-of-string).
 
+Cite as: Lorenzo Corgnati. (2018). HFR_NODE_tools. Zenodo. https://doi.org/10.5281/zenodo.2639555
+
 
 Author: Lorenzo Corgnati
 
